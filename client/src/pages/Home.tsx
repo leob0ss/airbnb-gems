@@ -5,7 +5,14 @@ import ListingsMap from "@/components/ListingsMap";
 import MissingFilterModal from "@/components/MissingFilterModal";
 import SurveyBanner from "@/components/SurveyBanner";
 import { useListings } from "@/hooks/useListings";
-import { ChevronLeft, ChevronRight, Map, LayoutGrid, X, Mail } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Map,
+  LayoutGrid,
+  X,
+  Mail,
+} from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 // Stable session ID for click tracking (no PII)
@@ -28,7 +35,15 @@ const CATEGORIES = [
     label: "Treehouses",
     emoji: "🌲",
     icon: (
-      <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+      <svg
+        viewBox="0 0 32 32"
+        xmlns="http://www.w3.org/2000/svg"
+        className="w-6 h-6"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        aria-hidden="true"
+      >
         <path d="M16 2 L4 14 L10 14 L10 28 L22 28 L22 14 L28 14 Z" />
         <path d="M16 2 L6 12 L26 12 Z" />
         <path d="M12 28 L12 20 L20 20 L20 28" />
@@ -40,7 +55,15 @@ const CATEGORIES = [
     label: "A-Frames",
     emoji: "🏔️",
     icon: (
-      <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+      <svg
+        viewBox="0 0 32 32"
+        xmlns="http://www.w3.org/2000/svg"
+        className="w-6 h-6"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        aria-hidden="true"
+      >
         <path d="M16 2 L2 28 L30 28 Z" />
         <path d="M10 28 L10 18 L22 18 L22 28" />
         <path d="M8 20 L24 20" />
@@ -89,11 +112,21 @@ function Pagination({
   );
 }
 
-function EmptyState({ hasFilters, onClear, onMissingFilter }: { hasFilters: boolean; onClear: () => void; onMissingFilter?: () => void }) {
+function EmptyState({
+  hasFilters,
+  onClear,
+  onMissingFilter,
+}: {
+  hasFilters: boolean;
+  onClear: () => void;
+  onMissingFilter?: () => void;
+}) {
   return (
     <div className="flex flex-col items-center justify-center py-24 text-center">
       <div className="text-5xl mb-4">🏡</div>
-      <h3 className="text-lg font-semibold text-foreground mb-2">No listings found</h3>
+      <h3 className="text-lg font-semibold text-foreground mb-2">
+        No listings found
+      </h3>
       <p className="text-sm text-muted-foreground mb-6 max-w-sm leading-relaxed">
         {hasFilters
           ? "We don't have listings for that combination yet. Try removing the state filter, or let us know what you're looking for."
@@ -131,14 +164,19 @@ function ContactModal({ onClose }: { onClose: () => void }) {
 
   function validateEmail(val: string) {
     if (!val) return "";
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val) ? "" : "Please enter a valid email.";
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val)
+      ? ""
+      : "Please enter a valid email.";
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!message.trim()) return;
     const err = validateEmail(email);
-    if (err) { setEmailError(err); return; }
+    if (err) {
+      setEmailError(err);
+      return;
+    }
 
     setIsSubmitting(true);
     setSubmitError("");
@@ -153,7 +191,10 @@ function ContactModal({ onClose }: { onClose: () => void }) {
         }),
       });
 
-      const data = (await response.json()) as { success?: boolean; error?: string };
+      const data = (await response.json()) as {
+        success?: boolean;
+        error?: string;
+      };
 
       if (!response.ok || !data.success) {
         setSubmitError(data.error ?? "Something went wrong. Please try again.");
@@ -187,13 +228,18 @@ function ContactModal({ onClose }: { onClose: () => void }) {
 
         {step === "form" ? (
           <>
-            <h2 className="text-xl font-bold text-foreground mb-1">Get in touch</h2>
+            <h2 className="text-xl font-bold text-foreground mb-1">
+              Get in touch
+            </h2>
             <p className="text-sm text-muted-foreground leading-relaxed mb-6">
-              Have a question, found a bug, or want to request a feature? We'd love to hear from you.
+              Have a question, found a bug, or want to request a feature? We'd
+              love to hear from you.
             </p>
             <form onSubmit={handleSubmit} className="flex flex-col gap-4">
               <div className="flex flex-col gap-1.5">
-                <label className="text-sm font-medium text-foreground">Message</label>
+                <label className="text-sm font-medium text-foreground">
+                  Message
+                </label>
                 <textarea
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
@@ -208,18 +254,27 @@ function ContactModal({ onClose }: { onClose: () => void }) {
               <div className="flex flex-col gap-1.5">
                 <label className="text-sm font-medium text-foreground flex items-center gap-2">
                   Your email
-                  <span className="text-xs font-normal text-muted-foreground">optional</span>
+                  <span className="text-xs font-normal text-muted-foreground">
+                    optional
+                  </span>
                 </label>
                 <input
                   type="email"
                   value={email}
-                  onChange={(e) => { setEmail(e.target.value); setEmailError(""); }}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    setEmailError("");
+                  }}
                   placeholder="you@example.com"
                   className="bg-secondary text-foreground placeholder:text-muted-foreground rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-foreground/20 border border-border"
                 />
-                {emailError && <p className="text-xs text-red-500">{emailError}</p>}
+                {emailError && (
+                  <p className="text-xs text-red-500">{emailError}</p>
+                )}
               </div>
-              {submitError && <p className="text-xs text-red-500">{submitError}</p>}
+              {submitError && (
+                <p className="text-xs text-red-500">{submitError}</p>
+              )}
               <button
                 type="submit"
                 disabled={!message.trim() || isSubmitting}
@@ -231,9 +286,12 @@ function ContactModal({ onClose }: { onClose: () => void }) {
           </>
         ) : (
           <>
-            <h2 className="text-xl font-bold text-foreground mb-2">Thanks! 🙏</h2>
+            <h2 className="text-xl font-bold text-foreground mb-2">
+              Thanks! 🙏
+            </h2>
             <p className="text-sm text-muted-foreground leading-relaxed mb-6">
-              We've received your message and will get back to you if you left an email.
+              We've received your message and will get back to you if you left
+              an email.
             </p>
             <button
               onClick={onClose}
@@ -267,7 +325,12 @@ export default function Home() {
     });
   }, []);
   const [hoveredId, setHoveredId] = useState<number | null>(null);
-  const [mapBounds, setMapBounds] = useState<{ north: number; south: number; east: number; west: number } | null>(null);
+  const [mapBounds, setMapBounds] = useState<{
+    north: number;
+    south: number;
+    east: number;
+    west: number;
+  } | null>(null);
 
   // Reset bounds whenever map view is toggled
   const handleToggleMap = (next: boolean) => {
@@ -287,7 +350,7 @@ export default function Home() {
     if (!hero) return;
     const observer = new IntersectionObserver(
       ([entry]) => setFilterSticky(!entry.isIntersecting),
-      { threshold: 0, rootMargin: "-80px 0px 0px 0px" }
+      { threshold: 0, rootMargin: "-80px 0px 0px 0px" },
     );
     observer.observe(hero);
     return () => observer.disconnect();
@@ -299,25 +362,67 @@ export default function Home() {
   }, [filters, activeCategory]);
 
   const STATE_LABELS: Record<string, string> = {
-    AK: "Alaska", AL: "Alabama", AR: "Arkansas", AZ: "Arizona", CA: "California",
-    CO: "Colorado", CT: "Connecticut", DE: "Delaware", FL: "Florida", GA: "Georgia",
-    HI: "Hawaii", IA: "Iowa", ID: "Idaho", IL: "Illinois", IN: "Indiana",
-    KS: "Kansas", KY: "Kentucky", LA: "Louisiana", MA: "Massachusetts", MD: "Maryland",
-    ME: "Maine", MI: "Michigan", MN: "Minnesota", MO: "Missouri", MS: "Mississippi",
-    MT: "Montana", NC: "North Carolina", ND: "North Dakota", NE: "Nebraska",
-    NH: "New Hampshire", NJ: "New Jersey", NM: "New Mexico", NV: "Nevada",
-    NY: "New York", OH: "Ohio", OK: "Oklahoma", OR: "Oregon", PA: "Pennsylvania",
-    RI: "Rhode Island", SC: "South Carolina", SD: "South Dakota", TN: "Tennessee",
-    TX: "Texas", UT: "Utah", VA: "Virginia", VT: "Vermont", WA: "Washington",
-    WI: "Wisconsin", WV: "West Virginia", WY: "Wyoming",
+    AK: "Alaska",
+    AL: "Alabama",
+    AR: "Arkansas",
+    AZ: "Arizona",
+    CA: "California",
+    CO: "Colorado",
+    CT: "Connecticut",
+    DE: "Delaware",
+    FL: "Florida",
+    GA: "Georgia",
+    HI: "Hawaii",
+    IA: "Iowa",
+    ID: "Idaho",
+    IL: "Illinois",
+    IN: "Indiana",
+    KS: "Kansas",
+    KY: "Kentucky",
+    LA: "Louisiana",
+    MA: "Massachusetts",
+    MD: "Maryland",
+    ME: "Maine",
+    MI: "Michigan",
+    MN: "Minnesota",
+    MO: "Missouri",
+    MS: "Mississippi",
+    MT: "Montana",
+    NC: "North Carolina",
+    ND: "North Dakota",
+    NE: "Nebraska",
+    NH: "New Hampshire",
+    NJ: "New Jersey",
+    NM: "New Mexico",
+    NV: "Nevada",
+    NY: "New York",
+    OH: "Ohio",
+    OK: "Oklahoma",
+    OR: "Oregon",
+    PA: "Pennsylvania",
+    RI: "Rhode Island",
+    SC: "South Carolina",
+    SD: "South Dakota",
+    TN: "Tennessee",
+    TX: "Texas",
+    UT: "Utah",
+    VA: "Virginia",
+    VT: "Vermont",
+    WA: "Washington",
+    WI: "Wisconsin",
+    WV: "West Virginia",
+    WY: "Wyoming",
   };
-  const activeFilterLabel = filters.state ? (STATE_LABELS[filters.state] ?? filters.state) : undefined;
+  const activeFilterLabel = filters.state
+    ? (STATE_LABELS[filters.state] ?? filters.state)
+    : undefined;
 
-  const { listings, filteredListings, total, availableStates, loading } = useListings(
-    { category: activeCategory, region: filters.state },
-    page,
-    ITEMS_PER_PAGE
-  );
+  const { listings, filteredListings, total, availableStates, loading } =
+    useListings(
+      { category: activeCategory, region: filters.state },
+      page,
+      ITEMS_PER_PAGE,
+    );
 
   // In map view, filter the grid to only listings within the current map bounds.
   const visibleListings = useMemo(() => {
@@ -346,22 +451,73 @@ export default function Home() {
   const currentCategory = CATEGORIES.find((c) => c.id === activeCategory)!;
 
   return (
-    <div className={showMap ? "h-screen bg-background flex flex-col overflow-hidden" : "min-h-screen bg-background flex flex-col"}>
-
+    <div
+      className={
+        showMap
+          ? "h-screen bg-background flex flex-col overflow-hidden"
+          : "min-h-screen bg-background flex flex-col"
+      }
+    >
       {/* ─── Navigation ──────────────────────────────────────────────────────── */}
       <nav className="sticky top-0 z-40 bg-background border-b border-border flex-shrink-0">
         <div className="max-w-[1760px] mx-auto px-6 sm:px-10 flex items-center justify-between h-[80px]">
-
           {/* Logo */}
-          <a href="/" className="flex items-center gap-2 flex-shrink-0" aria-label="Airbnb Gems home">
-            <svg viewBox="0 0 28 28" xmlns="http://www.w3.org/2000/svg" className="w-7 h-7" aria-hidden="true">
-              <polygon points="14,2 24,7.5 24,20.5 14,26 4,20.5 4,7.5" fill="#FF385C" />
-              <polygon points="14,7 20,10.5 20,17.5 14,21 8,17.5 8,10.5" fill="none" stroke="white" strokeWidth="1" opacity="0.6" />
-              <line x1="14" y1="2" x2="14" y2="7" stroke="white" strokeWidth="1" opacity="0.5" />
-              <line x1="24" y1="7.5" x2="20" y2="10.5" stroke="white" strokeWidth="1" opacity="0.5" />
-              <line x1="4" y1="7.5" x2="8" y2="10.5" stroke="white" strokeWidth="1" opacity="0.5" />
+          <a
+            href="/"
+            className="flex items-center gap-2 flex-shrink-0"
+            aria-label="Airbnb Gems home"
+          >
+            <svg
+              viewBox="0 0 28 28"
+              xmlns="http://www.w3.org/2000/svg"
+              className="w-7 h-7"
+              aria-hidden="true"
+            >
+              <polygon
+                points="14,2 24,7.5 24,20.5 14,26 4,20.5 4,7.5"
+                fill="#FF385C"
+              />
+              <polygon
+                points="14,7 20,10.5 20,17.5 14,21 8,17.5 8,10.5"
+                fill="none"
+                stroke="white"
+                strokeWidth="1"
+                opacity="0.6"
+              />
+              <line
+                x1="14"
+                y1="2"
+                x2="14"
+                y2="7"
+                stroke="white"
+                strokeWidth="1"
+                opacity="0.5"
+              />
+              <line
+                x1="24"
+                y1="7.5"
+                x2="20"
+                y2="10.5"
+                stroke="white"
+                strokeWidth="1"
+                opacity="0.5"
+              />
+              <line
+                x1="4"
+                y1="7.5"
+                x2="8"
+                y2="10.5"
+                stroke="white"
+                strokeWidth="1"
+                opacity="0.5"
+              />
             </svg>
-            <span className="font-bold text-xl tracking-tight text-foreground" style={{fontFamily: "'Inter', sans-serif"}}>Airbnb <span className="text-[#FF385C]">Gems</span></span>
+            <span
+              className="font-bold text-xl tracking-tight text-foreground"
+              style={{ fontFamily: "'Inter', sans-serif" }}
+            >
+              Airbnb <span className="text-[#FF385C]">Gems</span>
+            </span>
           </a>
 
           {/* Contact link */}
@@ -371,7 +527,6 @@ export default function Home() {
           >
             Contact
           </button>
-
         </div>
       </nav>
 
@@ -406,7 +561,10 @@ export default function Home() {
                 />
                 {activeFilterLabel && (
                   <span className="text-sm text-muted-foreground hidden sm:block ml-2">
-                    <span className="font-semibold text-foreground">{filteredListings.length}</span> {currentCategory.label.toLowerCase()} in {activeFilterLabel}
+                    <span className="font-semibold text-foreground">
+                      {filteredListings.length}
+                    </span>{" "}
+                    {currentCategory.label.toLowerCase()} in {activeFilterLabel}
                   </span>
                 )}
               </div>
@@ -415,53 +573,62 @@ export default function Home() {
 
           {/* ── Split panel ── */}
           <div className="flex flex-1 min-h-0">
-          {/* Left: scrollable grid */}
-          <div className="w-[45%] xl:w-[40%] overflow-y-auto flex-shrink-0 border-r border-border">
-            <div className="p-6 grid grid-cols-1 sm:grid-cols-2 gap-6" ref={gridRef}>
-              {loading
-                ? Array.from({ length: 8 }).map((_, i) => <ListingCardSkeleton key={i} />)
-                : visibleListings.map((listing) => (
-                    <div
-                      key={listing.id}
-                      onMouseEnter={() => setHoveredId(listing.id)}
-                      onMouseLeave={() => setHoveredId(null)}
-                    >
-                      <ListingCard
-                        listing={listing}
-                        activeFilter={activeFilterLabel}
-                        sessionId={sessionId}
-                      />
-                    </div>
-                  ))}
-            </div>
-            {totalPages > 1 && !loading && (
-              <div className="px-6 pb-6">
-                <Pagination
-                  page={page}
-                  totalPages={totalPages}
-                  total={total}
-                  onPageChange={handlePageChange}
-                />
+            {/* Left: scrollable grid */}
+            <div className="w-[45%] xl:w-[40%] overflow-y-auto flex-shrink-0 border-r border-border">
+              <div
+                className="p-6 grid grid-cols-1 sm:grid-cols-2 gap-6"
+                ref={gridRef}
+              >
+                {loading
+                  ? Array.from({ length: 8 }).map((_, i) => (
+                      <ListingCardSkeleton key={i} />
+                    ))
+                  : visibleListings.map((listing) => (
+                      <div
+                        key={listing.id}
+                        onMouseEnter={() => setHoveredId(listing.id)}
+                        onMouseLeave={() => setHoveredId(null)}
+                      >
+                        <ListingCard
+                          listing={listing}
+                          activeFilter={activeFilterLabel}
+                          sessionId={sessionId}
+                        />
+                      </div>
+                    ))}
               </div>
-            )}
-          </div>
+              {totalPages > 1 && !loading && (
+                <div className="px-6 pb-6">
+                  <Pagination
+                    page={page}
+                    totalPages={totalPages}
+                    total={total}
+                    onPageChange={handlePageChange}
+                  />
+                </div>
+              )}
+            </div>
 
-          {/* Right: sticky map */}
-          <div className="flex-1 relative">
-            <ListingsMap
-              listings={filteredListings}
-              hoveredId={hoveredId}
-              onHover={setHoveredId}
-              onBoundsChange={setMapBounds}
-            />
+            {/* Right: sticky map */}
+            <div className="flex-1 relative">
+              <ListingsMap
+                listings={filteredListings}
+                hoveredId={hoveredId}
+                onHover={setHoveredId}
+                onBoundsChange={setMapBounds}
+              />
+            </div>
           </div>
-          </div>{/* end split panel */}
+          {/* end split panel */}
         </div>
       ) : (
         /* ── GRID VIEW ── */
         <>
           {/* ── Hero ── */}
-          <header ref={heroRef} className="relative border-b border-border overflow-hidden flex-shrink-0">
+          <header
+            ref={heroRef}
+            className="relative border-b border-border overflow-hidden flex-shrink-0"
+          >
             <div
               className="absolute inset-0 opacity-[0.03]"
               style={{
@@ -470,12 +637,22 @@ export default function Home() {
             />
             <div className="max-w-[1760px] mx-auto px-6 sm:px-10 relative py-8 md:py-10">
               <div className="max-w-4xl">
-                <h1 className="text-3xl md:text-4xl leading-[1.1] text-foreground mb-3" style={{fontFamily: "'Fraunces', Georgia, serif", fontWeight: 300}}>
-                  <span style={{fontWeight: 700}}>Airbnb removed their category filters.</span>
+                <h1
+                  className="text-3xl md:text-4xl leading-[1.1] text-foreground mb-3"
+                  style={{
+                    fontFamily: "'Fraunces', Georgia, serif",
+                    fontWeight: 300,
+                  }}
+                >
+                  <span style={{ fontWeight: 700 }}>
+                    Airbnb removed their category filters.
+                  </span>
                   <em className="italic"> We brought them back.</em>
                 </h1>
                 <p className="text-sm text-muted-foreground leading-relaxed mb-2">
-                  In 2025, Airbnb quietly removed certain categories from its navigation. Some of us missed them so much that we created this tool to find them again.
+                  In 2025, Airbnb quietly removed certain categories from its
+                  navigation. Some of us missed them so much that we created
+                  this tool to find them again.
                 </p>
                 <p className="text-xs text-muted-foreground/60">
                   We are not affiliated with or endorsed by Airbnb, Inc.
@@ -485,9 +662,11 @@ export default function Home() {
           </header>
 
           {/* ── Category tabs + filter bar ── */}
-          <div className={`border-b border-border bg-background z-30 transition-shadow ${
-            filterSticky ? "sticky top-[80px] shadow-sm" : ""
-          }`}>
+          <div
+            className={`border-b border-border bg-background z-30 transition-shadow ${
+              filterSticky ? "sticky top-[80px] shadow-sm" : ""
+            }`}
+          >
             <div className="max-w-[1760px] mx-auto px-6 sm:px-10">
               <div className="flex items-center gap-2 py-4 overflow-x-auto scrollbar-none">
                 {/* Category tabs */}
@@ -517,65 +696,77 @@ export default function Home() {
                 <div className="hidden sm:block h-8 w-px bg-border mx-2" />
 
                 <div className="hidden sm:block">
-                <FilterBar
-                  filters={filters}
-                  availableStates={availableStates}
-                  onFilterChange={setFilters}
-                  inline
-                />
+                  <FilterBar
+                    filters={filters}
+                    availableStates={availableStates}
+                    onFilterChange={setFilters}
+                    inline
+                  />
                 </div>
                 {activeFilterLabel && (
                   <span className="text-sm text-muted-foreground hidden sm:block ml-2">
-                    <span className="font-semibold text-foreground">{total}</span> {currentCategory.label.toLowerCase()} in {activeFilterLabel}
+                    <span className="font-semibold text-foreground">
+                      {total}
+                    </span>{" "}
+                    {currentCategory.label.toLowerCase()} in {activeFilterLabel}
                   </span>
                 )}
               </div>
             </div>
           </div>
 
-          <main className="max-w-[1760px] mx-auto w-full px-6 sm:px-10 py-8 flex-1" ref={gridRef}>
-          {loading ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
-              {Array.from({ length: ITEMS_PER_PAGE }).map((_, i) => (
-                <ListingCardSkeleton key={i} />
-              ))}
-            </div>
-          ) : listings.length === 0 ? (
-            <EmptyState hasFilters={Boolean(activeFilterLabel)} onClear={() => setFilters({})} onMissingFilter={() => setMissingFilterOpen(true)} />
-          ) : (
-            <>
-              {/* Result count */}
-              <p className="text-sm text-foreground font-semibold mb-6">
-                {total > 0 ? `${total.toLocaleString()} ${currentCategory.label.toLowerCase()}` : ""}
-                {activeFilterLabel ? ` in ${activeFilterLabel}` : ""}
-              </p>
+          <main
+            className="max-w-[1760px] mx-auto w-full px-6 sm:px-10 py-8 flex-1"
+            ref={gridRef}
+          >
+            {loading ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
-                {listings.map((listing) => (
-                  <div
-                    key={listing.id}
-                    onMouseEnter={() => setHoveredId(listing.id)}
-                    onMouseLeave={() => setHoveredId(null)}
-                  >
-                    <ListingCard
-                      listing={listing}
-                      activeFilter={activeFilterLabel}
-                      sessionId={sessionId}
-                      onTrackedClick={handleTrackedClick}
-                    />
-                  </div>
+                {Array.from({ length: ITEMS_PER_PAGE }).map((_, i) => (
+                  <ListingCardSkeleton key={i} />
                 ))}
               </div>
-              {totalPages > 1 && (
-                <Pagination
-                  page={page}
-                  totalPages={totalPages}
-                  total={total}
-                  onPageChange={handlePageChange}
-                />
-              )}
-            </>
-          )}
-        </main>
+            ) : listings.length === 0 ? (
+              <EmptyState
+                hasFilters={Boolean(activeFilterLabel)}
+                onClear={() => setFilters({})}
+                onMissingFilter={() => setMissingFilterOpen(true)}
+              />
+            ) : (
+              <>
+                {/* Result count */}
+                <p className="text-sm text-foreground font-semibold mb-6">
+                  {total > 0
+                    ? `${total.toLocaleString()} ${currentCategory.label.toLowerCase()}`
+                    : ""}
+                  {activeFilterLabel ? ` in ${activeFilterLabel}` : ""}
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
+                  {listings.map((listing) => (
+                    <div
+                      key={listing.id}
+                      onMouseEnter={() => setHoveredId(listing.id)}
+                      onMouseLeave={() => setHoveredId(null)}
+                    >
+                      <ListingCard
+                        listing={listing}
+                        activeFilter={activeFilterLabel}
+                        sessionId={sessionId}
+                        onTrackedClick={handleTrackedClick}
+                      />
+                    </div>
+                  ))}
+                </div>
+                {totalPages > 1 && (
+                  <Pagination
+                    page={page}
+                    totalPages={totalPages}
+                    total={total}
+                    onPageChange={handlePageChange}
+                  />
+                )}
+              </>
+            )}
+          </main>
         </>
       )}
 
@@ -604,7 +795,8 @@ export default function Home() {
         <footer className="border-t border-border mt-8 flex-shrink-0 bg-secondary">
           <div className="max-w-[1760px] mx-auto px-6 sm:px-10 py-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <p className="text-sm text-muted-foreground">
-              © 2026 Airbnb Gems · Not affiliated with or endorsed by Airbnb, Inc. · All listings link to official Airbnb pages.
+              © 2026 Airbnb Gems · Not affiliated with or endorsed by Airbnb,
+              Inc. · All listings link to official Airbnb pages.
             </p>
             <p className="text-sm text-muted-foreground">
               Data sourced from Airbnb's public listing pages.

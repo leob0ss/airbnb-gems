@@ -13,15 +13,15 @@ export type SurveySubmitResult =
   | { success: true; id: number }
   | { success: false; error: string };
 
-export function parseSurveyInput(body: unknown): SurveySubmitResult | SurveySubmitInput {
+export function parseSurveyInput(
+  body: unknown,
+): SurveySubmitResult | SurveySubmitInput {
   if (!body || typeof body !== "object") {
     return { success: false, error: "Invalid request body." };
   }
 
-  const { answer, followup, sessionId, activeCategory, activeState } = body as Record<
-    string,
-    unknown
-  >;
+  const { answer, followup, sessionId, activeCategory, activeState } =
+    body as Record<string, unknown>;
 
   if (answer !== "yes" && answer !== "no") {
     return { success: false, error: "Invalid answer." };
@@ -33,7 +33,10 @@ export function parseSurveyInput(body: unknown): SurveySubmitResult | SurveySubm
       return { success: false, error: "Invalid follow-up." };
     }
     if (followup.trim().length > 500) {
-      return { success: false, error: "Follow-up must be at most 500 characters." };
+      return {
+        success: false,
+        error: "Follow-up must be at most 500 characters.",
+      };
     }
     normalizedFollowup = followup.trim();
   }
@@ -87,11 +90,13 @@ export async function submitSurvey(body: unknown): Promise<SurveySubmitResult> {
     parsed.followup ?? null,
     parsed.sessionId ?? null,
     parsed.activeCategory ?? null,
-    parsed.activeState ?? null
+    parsed.activeState ?? null,
   );
 
   const answerLabel = parsed.answer === "yes" ? "✅ Yes" : "❌ Not yet";
-  const followupLine = parsed.followup ? `\n\nFollow-up: "${parsed.followup}"` : "";
+  const followupLine = parsed.followup
+    ? `\n\nFollow-up: "${parsed.followup}"`
+    : "";
   const contextLine = [
     parsed.activeCategory && `Category: ${parsed.activeCategory}`,
     parsed.activeState && `State: ${parsed.activeState}`,

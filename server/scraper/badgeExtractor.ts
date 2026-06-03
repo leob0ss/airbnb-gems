@@ -106,7 +106,7 @@ const CATEGORY_KEYWORDS: Record<string, string[]> = {
 function extractNiobeData(html: string): Record<string, unknown> | null {
   // Primary: <script id="data-deferred-state-0"> or similar
   const deferredMatch = html.match(
-    /<script[^>]+id="data-deferred-state[^"]*"[^>]*>([\s\S]*?)<\/script>/i
+    /<script[^>]+id="data-deferred-state[^"]*"[^>]*>([\s\S]*?)<\/script>/i,
   );
   if (deferredMatch?.[1]) {
     try {
@@ -117,7 +117,9 @@ function extractNiobeData(html: string): Record<string, unknown> | null {
   }
 
   // Fallback: niobeClientData embedded directly
-  const niobeMatch = html.match(/niobeClientData\s*=\s*(\{[\s\S]*?\});\s*<\/script>/);
+  const niobeMatch = html.match(
+    /niobeClientData\s*=\s*(\{[\s\S]*?\});\s*<\/script>/,
+  );
   if (niobeMatch?.[1]) {
     try {
       return JSON.parse(niobeMatch[1]);
@@ -142,7 +144,10 @@ function extractNiobeData(html: string): Record<string, unknown> | null {
  *   type: "LISTING_DESIGN_PUBLICATIONS"
  * }
  */
-function findBadges(obj: unknown, found: ExtractedBadge[] = []): ExtractedBadge[] {
+function findBadges(
+  obj: unknown,
+  found: ExtractedBadge[] = [],
+): ExtractedBadge[] {
   if (!obj || typeof obj !== "object") return found;
 
   if (Array.isArray(obj)) {
@@ -162,7 +167,10 @@ function findBadges(obj: unknown, found: ExtractedBadge[] = []): ExtractedBadge[
       | "LISTING_NOTABLE_DESIGNER";
 
     // Primary: subtitleHtml.htmlText (e.g. "Dwell, October 2024")
-    const subtitleHtml = record["subtitleHtml"] as Record<string, unknown> | null | undefined;
+    const subtitleHtml = record["subtitleHtml"] as
+      | Record<string, unknown>
+      | null
+      | undefined;
     const subtitleHtmlText =
       subtitleHtml && typeof subtitleHtml === "object"
         ? (subtitleHtml["htmlText"] as string) || ""
@@ -170,13 +178,16 @@ function findBadges(obj: unknown, found: ExtractedBadge[] = []): ExtractedBadge[
 
     // Fallback: subtitle field, then title field with em-dash splitting
     const subtitle = (record["subtitle"] as string) || "";
-    const title = (record["title"] as string) || (record["headline"] as string) || "";
+    const title =
+      (record["title"] as string) || (record["headline"] as string) || "";
 
     // Sanity check helper: publication names are short, no HTML, no policy language
     const isLikelyPublication = (s: string) =>
       s.length < 80 &&
       !s.includes("<") &&
-      !/service animal|traveling with|emotional support|booking|please reach|special event/i.test(s);
+      !/service animal|traveling with|emotional support|booking|please reach|special event/i.test(
+        s,
+      );
 
     // Prefer subtitleHtml.htmlText, then subtitle, then split title
     let value = "";
@@ -186,13 +197,20 @@ function findBadges(obj: unknown, found: ExtractedBadge[] = []): ExtractedBadge[
       value = subtitle.trim();
     } else if (title) {
       const valueParts = title.split(/\s*[—–-]\s*/);
-      const candidate = valueParts.length > 1 ? valueParts[valueParts.length - 1].trim() : title.trim();
+      const candidate =
+        valueParts.length > 1
+          ? valueParts[valueParts.length - 1].trim()
+          : title.trim();
       if (isLikelyPublication(candidate)) {
         value = candidate;
       }
     }
 
-    const label = title || (badgeType === "LISTING_DESIGN_PUBLICATIONS" ? "Featured in" : "Designed by");
+    const label =
+      title ||
+      (badgeType === "LISTING_DESIGN_PUBLICATIONS"
+        ? "Featured in"
+        : "Designed by");
 
     if (value) {
       found.push({ badgeType, label, value });
@@ -207,20 +225,27 @@ function findBadges(obj: unknown, found: ExtractedBadge[] = []): ExtractedBadge[
 /**
  * Extracts basic listing metadata from the niobe data structure.
  */
-function extractMetadata(data: Record<string, unknown>): Partial<ExtractedListingData> {
+function extractMetadata(
+  data: Record<string, unknown>,
+): Partial<ExtractedListingData> {
   const meta: Partial<ExtractedListingData> = {};
 
   // Walk for title
-  const titleMatch = JSON.stringify(data).match(/"name"\s*:\s*"([^"]{10,200})"/);
+  const titleMatch = JSON.stringify(data).match(
+    /"name"\s*:\s*"([^"]{10,200})"/,
+  );
   if (titleMatch) meta.title = titleMatch[1];
 
   // Walk for description
-  const descMatch = JSON.stringify(data).match(/"description"\s*:\s*"([^"]{20,})"/);
-  if (descMatch) meta.description = descMatch[1].replace(/\\n/g, "\n").replace(/\\"/g, '"');
+  const descMatch = JSON.stringify(data).match(
+    /"description"\s*:\s*"([^"]{20,})"/,
+  );
+  if (descMatch)
+    meta.description = descMatch[1].replace(/\\n/g, "\n").replace(/\\"/g, '"');
 
   // Walk for image
   const imgMatch = JSON.stringify(data).match(
-    /"(https:\/\/a0\.muscache\.com\/[^"]+\.(?:jpg|jpeg|webp|png)[^"]*)"/
+    /"(https:\/\/a0\.muscache\.com\/[^"]+\.(?:jpg|jpeg|webp|png)[^"]*)"/,
   );
   if (imgMatch) meta.imageUrl = imgMatch[1];
 
@@ -250,7 +275,7 @@ function buildPublicationRegex(pub: string): RegExp {
   // or followed by a comma/period/quote — this filters out casual mentions
   return new RegExp(
     `(?:featured\\s+in|as\\s+seen\\s+in|covered\\s+by|published\\s+in|written\\s+up\\s+in|appeared\\s+in|spotlighted\\s+in|highlighted\\s+in|\\bin\\s+)\\s*${escaped}|${escaped}\\s*(?:magazine|feature|article|spread|issue|cover)`,
-    "i"
+    "i",
   );
 }
 
@@ -268,7 +293,9 @@ export function matchPublicationsInText(text: string): ExtractedBadge[] {
       // Additional false-positive guard: "house beautiful" as adjective
       if (
         pub.toLowerCase() === "house beautiful" &&
-        /house\s+beautiful\s+(?:home|garden|kitchen|bathroom|bedroom)/i.test(text)
+        /house\s+beautiful\s+(?:home|garden|kitchen|bathroom|bedroom)/i.test(
+          text,
+        )
       ) {
         continue;
       }
@@ -306,7 +333,9 @@ export function detectCategories(title: string, description: string): string[] {
 /**
  * Given raw HTML from an Airbnb listing page, extracts all editorial signals.
  */
-export function extractListingData(html: string): Partial<ExtractedListingData> {
+export function extractListingData(
+  html: string,
+): Partial<ExtractedListingData> {
   const niobeData = extractNiobeData(html);
 
   let badges: ExtractedBadge[] = [];
@@ -333,7 +362,8 @@ export function extractListingData(html: string): Partial<ExtractedListingData> 
   const publications = allBadges
     .filter(
       (b) =>
-        b.badgeType === "LISTING_DESIGN_PUBLICATIONS" || b.badgeType === "TEXT_MATCH"
+        b.badgeType === "LISTING_DESIGN_PUBLICATIONS" ||
+        b.badgeType === "TEXT_MATCH",
     )
     .map((b) => b.value)
     .filter(Boolean);
@@ -349,13 +379,14 @@ export function extractListingData(html: string): Partial<ExtractedListingData> 
 
   // Determine signal source and confidence
   const hasBadgePublication = badges.some(
-    (b) => b.badgeType === "LISTING_DESIGN_PUBLICATIONS"
+    (b) => b.badgeType === "LISTING_DESIGN_PUBLICATIONS",
   );
   const hasBadgeDesigner = badges.some(
-    (b) => b.badgeType === "LISTING_NOTABLE_DESIGNER"
+    (b) => b.badgeType === "LISTING_NOTABLE_DESIGNER",
   );
 
-  let signalSource: "badge_publication" | "badge_designer" | "text_match" = "text_match";
+  let signalSource: "badge_publication" | "badge_designer" | "text_match" =
+    "text_match";
   let confidence = 70;
 
   if (hasBadgePublication) {

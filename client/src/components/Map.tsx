@@ -95,7 +95,9 @@ function loadMapScript(): Promise<void> {
   if (mapScriptPromise) return mapScriptPromise;
 
   if (!MAPS_API_KEY) {
-    return Promise.reject(new Error("VITE_GOOGLE_MAPS_API_KEY is not configured"));
+    return Promise.reject(
+      new Error("VITE_GOOGLE_MAPS_API_KEY is not configured"),
+    );
   }
 
   mapScriptPromise = new Promise((resolve, reject) => {

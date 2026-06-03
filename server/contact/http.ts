@@ -1,8 +1,13 @@
 import { submitContact } from "./submitContact.js";
 
-export async function handleContactRequest(request: Request): Promise<Response> {
+export async function handleContactRequest(
+  request: Request,
+): Promise<Response> {
   if (request.method !== "POST") {
-    return Response.json({ success: false, error: "Method not allowed" }, { status: 405 });
+    return Response.json(
+      { success: false, error: "Method not allowed" },
+      { status: 405 },
+    );
   }
 
   try {
@@ -19,7 +24,7 @@ export async function handleContactRequest(request: Request): Promise<Response> 
     console.error("[Contact] Submit failed:", error);
     return Response.json(
       { success: false, error: "Something went wrong. Please try again." },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

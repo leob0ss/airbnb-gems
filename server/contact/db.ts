@@ -3,7 +3,9 @@ import { neon } from "@neondatabase/serverless";
 let schemaReady: Promise<void> | null = null;
 
 function getPostgresUrl(): string | null {
-  return process.env.POSTGRES_URL ?? process.env.POSTGRES_URL_NON_POOLING ?? null;
+  return (
+    process.env.POSTGRES_URL ?? process.env.POSTGRES_URL_NON_POOLING ?? null
+  );
 }
 
 export function isContactDbConfigured(): boolean {
@@ -37,7 +39,7 @@ async function ensureSchemaOnce(): Promise<void> {
 
 export async function insertContactSubmission(
   message: string,
-  email: string | null
+  email: string | null,
 ): Promise<number> {
   const url = getPostgresUrl();
   if (!url) {

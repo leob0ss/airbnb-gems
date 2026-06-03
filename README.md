@@ -6,12 +6,12 @@ Browse Airbnb listings by architectural category — treehouses, A-frames, and m
 
 ## Stack
 
-| Layer | Tech |
-|---|---|
-| Frontend | React 19, Vite, Tailwind CSS 4, shadcn/ui |
-| Listings | Static JSON (`client/public/listings.json`) |
+| Layer     | Tech                                             |
+| --------- | ------------------------------------------------ |
+| Frontend  | React 19, Vite, Tailwind CSS 4, shadcn/ui        |
+| Listings  | Static JSON (`client/public/listings.json`)      |
 | Forms API | Vercel serverless → Neon Postgres + Resend email |
-| Deploy | Vercel |
+| Deploy    | Vercel                                           |
 
 ## Quick start (local)
 
@@ -44,12 +44,12 @@ pnpm dev
 
 ## Scripts
 
-| Command | Description |
-|---|---|
-| `pnpm dev` | Local dev (Vite + form API routes) |
+| Command          | Description                                 |
+| ---------------- | ------------------------------------------- |
+| `pnpm dev`       | Local dev (Vite + form API routes)          |
 | `pnpm data:json` | Convert CSV → `client/public/listings.json` |
-| `pnpm build` | Regenerate JSON + build for Vercel |
-| `pnpm test` | Run Vitest tests |
+| `pnpm build`     | Regenerate JSON + build for Vercel          |
+| `pnpm test`      | Run Vitest tests                            |
 
 ## Project structure
 

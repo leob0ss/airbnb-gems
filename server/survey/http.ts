@@ -2,7 +2,10 @@ import { submitSurvey } from "./submitSurvey.js";
 
 export async function handleSurveyRequest(request: Request): Promise<Response> {
   if (request.method !== "POST") {
-    return Response.json({ success: false, error: "Method not allowed" }, { status: 405 });
+    return Response.json(
+      { success: false, error: "Method not allowed" },
+      { status: 405 },
+    );
   }
 
   try {
@@ -19,7 +22,7 @@ export async function handleSurveyRequest(request: Request): Promise<Response> {
     console.error("[Survey] Submit failed:", error);
     return Response.json(
       { success: false, error: "Something went wrong. Please try again." },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

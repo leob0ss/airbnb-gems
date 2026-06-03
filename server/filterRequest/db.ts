@@ -3,7 +3,9 @@ import { neon } from "@neondatabase/serverless";
 let schemaReady: Promise<void> | null = null;
 
 function getPostgresUrl(): string | null {
-  return process.env.POSTGRES_URL ?? process.env.POSTGRES_URL_NON_POOLING ?? null;
+  return (
+    process.env.POSTGRES_URL ?? process.env.POSTGRES_URL_NON_POOLING ?? null
+  );
 }
 
 export function isFilterRequestDbConfigured(): boolean {
@@ -39,7 +41,7 @@ async function ensureSchemaOnce(): Promise<void> {
 export async function insertFilterRequest(
   whatLookingFor: string,
   email: string | null,
-  sessionId: string | null
+  sessionId: string | null,
 ): Promise<number> {
   const url = getPostgresUrl();
   if (!url) {

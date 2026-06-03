@@ -17,10 +17,14 @@ function validatePayload(input: NotificationPayload): NotificationPayload {
   if (!title) throw new Error("Notification title is required.");
   if (!content) throw new Error("Notification content is required.");
   if (title.length > TITLE_MAX_LENGTH) {
-    throw new Error(`Notification title must be at most ${TITLE_MAX_LENGTH} characters.`);
+    throw new Error(
+      `Notification title must be at most ${TITLE_MAX_LENGTH} characters.`,
+    );
   }
   if (content.length > CONTENT_MAX_LENGTH) {
-    throw new Error(`Notification content must be at most ${CONTENT_MAX_LENGTH} characters.`);
+    throw new Error(
+      `Notification content must be at most ${CONTENT_MAX_LENGTH} characters.`,
+    );
   }
 
   return { title, content };
@@ -30,7 +34,9 @@ function validatePayload(input: NotificationPayload): NotificationPayload {
  * Notify the product owner about survey, filter, or contact submissions.
  * Uses Resend when configured; otherwise logs and returns success so UX isn't blocked.
  */
-export async function notifyOwner(payload: NotificationPayload): Promise<boolean> {
+export async function notifyOwner(
+  payload: NotificationPayload,
+): Promise<boolean> {
   const { title, content } = validatePayload(payload);
 
   if (!ENV.resendApiKey || !ENV.notifyEmail) {
@@ -55,7 +61,9 @@ export async function notifyOwner(payload: NotificationPayload): Promise<boolean
 
     if (!response.ok) {
       const detail = await response.text().catch(() => "");
-      console.warn(`[Notification] Resend failed (${response.status}): ${detail}`);
+      console.warn(
+        `[Notification] Resend failed (${response.status}): ${detail}`,
+      );
       return false;
     }
 

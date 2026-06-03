@@ -24,7 +24,11 @@ function getPlaceholder(id: number): string {
 }
 
 /** Format location as "City, State" for US or "City, Country" for international */
-function formatLocation(city: string | null, region: string | null, country: string | null): string {
+function formatLocation(
+  city: string | null,
+  region: string | null,
+  country: string | null,
+): string {
   const parts: string[] = [];
   if (city) parts.push(city);
   if (region && region !== "NULL") {
@@ -35,9 +39,16 @@ function formatLocation(city: string | null, region: string | null, country: str
   return parts.join(", ");
 }
 
-export default function ListingCard({ listing, onTrackedClick }: ListingCardProps) {
+export default function ListingCard({
+  listing,
+  onTrackedClick,
+}: ListingCardProps) {
   const imageUrl = listing.imageUrl || getPlaceholder(listing.id);
-  const location = formatLocation(listing.city, listing.region, listing.country);
+  const location = formatLocation(
+    listing.city,
+    listing.region,
+    listing.country,
+  );
 
   const handleClick = useCallback(() => {
     window.open(listing.airbnbUrl, "_blank", "noopener,noreferrer");
@@ -54,7 +65,10 @@ export default function ListingCard({ listing, onTrackedClick }: ListingCardProp
       aria-label={`View ${listing.title} on Airbnb`}
     >
       {/* Image */}
-      <div className="card-image relative overflow-hidden rounded-xl bg-muted" style={{ aspectRatio: "20/19" }}>
+      <div
+        className="card-image relative overflow-hidden rounded-xl bg-muted"
+        style={{ aspectRatio: "20/19" }}
+      >
         <img
           src={imageUrl}
           alt={listing.title}
@@ -79,18 +93,25 @@ export default function ListingCard({ listing, onTrackedClick }: ListingCardProp
               <span className="text-sm text-foreground">
                 {listing.rating.toFixed(2)}
                 {listing.reviewCount ? (
-                  <span className="text-muted-foreground font-normal"> ({listing.reviewCount.toLocaleString()})</span>
+                  <span className="text-muted-foreground font-normal">
+                    {" "}
+                    ({listing.reviewCount.toLocaleString()})
+                  </span>
                 ) : null}
               </span>
             </div>
           ) : (
-            <span className="text-sm text-muted-foreground flex-shrink-0">New</span>
+            <span className="text-sm text-muted-foreground flex-shrink-0">
+              New
+            </span>
           )}
         </div>
 
         {/* Row 2: location (secondary) */}
         {location ? (
-          <p className="text-sm text-muted-foreground mt-0.5 line-clamp-1">{location}</p>
+          <p className="text-sm text-muted-foreground mt-0.5 line-clamp-1">
+            {location}
+          </p>
         ) : null}
 
         {/* Row 3: beds */}

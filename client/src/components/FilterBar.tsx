@@ -95,7 +95,9 @@ function StateSelect({
 
       <Select
         value={activeState ?? "all"}
-        onValueChange={(val) => onFilterChange(val === "all" ? {} : { state: val })}
+        onValueChange={(val) =>
+          onFilterChange(val === "all" ? {} : { state: val })
+        }
       >
         <SelectTrigger className="w-48 h-9 text-sm">
           <SelectValue placeholder="All states" />
@@ -123,7 +125,12 @@ function StateSelect({
   );
 }
 
-export default function FilterBar({ filters, availableStates, onFilterChange, inline }: FilterBarProps) {
+export default function FilterBar({
+  filters,
+  availableStates,
+  onFilterChange,
+  inline,
+}: FilterBarProps) {
   const activeState = filters.state;
 
   if (inline) {
