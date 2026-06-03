@@ -14,7 +14,9 @@ function validateEmail(email: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
-export function parseContactInput(body: unknown): ContactSubmitResult | ContactSubmitInput {
+export function parseContactInput(
+  body: unknown,
+): ContactSubmitResult | ContactSubmitInput {
   if (!body || typeof body !== "object") {
     return { success: false, error: "Invalid request body." };
   }
@@ -26,7 +28,10 @@ export function parseContactInput(body: unknown): ContactSubmitResult | ContactS
   }
 
   if (message.trim().length > 2000) {
-    return { success: false, error: "Message must be at most 2000 characters." };
+    return {
+      success: false,
+      error: "Message must be at most 2000 characters.",
+    };
   }
 
   let normalizedEmail: string | null = null;
@@ -43,7 +48,9 @@ export function parseContactInput(body: unknown): ContactSubmitResult | ContactS
   };
 }
 
-export async function submitContact(body: unknown): Promise<ContactSubmitResult> {
+export async function submitContact(
+  body: unknown,
+): Promise<ContactSubmitResult> {
   const parsed = parseContactInput(body);
   if ("success" in parsed) return parsed;
 
@@ -54,7 +61,10 @@ export async function submitContact(body: unknown): Promise<ContactSubmitResult>
     };
   }
 
-  const id = await insertContactSubmission(parsed.message, parsed.email ?? null);
+  const id = await insertContactSubmission(
+    parsed.message,
+    parsed.email ?? null,
+  );
 
   const emailLine = parsed.email ? `\n\nFrom: ${parsed.email}` : "";
   await notifyOwner({

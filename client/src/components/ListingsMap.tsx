@@ -1,7 +1,10 @@
 /// <reference types="@types/google.maps" />
 
 import { MapView } from "@/components/Map";
-import { MarkerClusterer, SuperClusterAlgorithm } from "@googlemaps/markerclusterer";
+import {
+  MarkerClusterer,
+  SuperClusterAlgorithm,
+} from "@googlemaps/markerclusterer";
 import { BedDouble, ExternalLink, Star, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
@@ -35,9 +38,14 @@ interface ListingsMapProps {
   onBoundsChange?: (bounds: MapBounds) => void;
 }
 
-const PLACEHOLDER = "https://images.unsplash.com/photo-1449844908441-8829872d2607?w=400&q=80";
+const PLACEHOLDER =
+  "https://images.unsplash.com/photo-1449844908441-8829872d2607?w=400&q=80";
 
-function formatLocation(city: string | null, region: string | null, country: string | null): string {
+function formatLocation(
+  city: string | null,
+  region: string | null,
+  country: string | null,
+): string {
   const parts: string[] = [];
   if (city) parts.push(city);
   if (region && region !== "NULL") parts.push(region);
@@ -48,7 +56,13 @@ function formatLocation(city: string | null, region: string | null, country: str
 /** Custom cluster renderer — matches the pill style of individual markers */
 function createClusterRenderer() {
   return {
-    render: ({ count, position }: { count: number; position: google.maps.LatLng }) => {
+    render: ({
+      count,
+      position,
+    }: {
+      count: number;
+      position: google.maps.LatLng;
+    }) => {
       const pill = document.createElement("div");
       pill.textContent = String(count);
       pill.style.cssText = `
@@ -76,15 +90,26 @@ function createClusterRenderer() {
   };
 }
 
-export default function ListingsMap({ listings, hoveredId, onHover, onBoundsChange }: ListingsMapProps) {
+export default function ListingsMap({
+  listings,
+  hoveredId,
+  onHover,
+  onBoundsChange,
+}: ListingsMapProps) {
   const onBoundsChangeRef = useRef(onBoundsChange);
-  useEffect(() => { onBoundsChangeRef.current = onBoundsChange; }, [onBoundsChange]);
+  useEffect(() => {
+    onBoundsChangeRef.current = onBoundsChange;
+  }, [onBoundsChange]);
 
   const mapRef = useRef<google.maps.Map | null>(null);
-  const markersRef = useRef<Map<number, google.maps.marker.AdvancedMarkerElement>>(new Map());
+  const markersRef = useRef<
+    Map<number, google.maps.marker.AdvancedMarkerElement>
+  >(new Map());
   const clustererRef = useRef<MarkerClusterer | null>(null);
   const [selectedListing, setSelectedListing] = useState<Listing | null>(null);
-  const [popupPos, setPopupPos] = useState<{ x: number; y: number } | null>(null);
+  const [popupPos, setPopupPos] = useState<{ x: number; y: number } | null>(
+    null,
+  );
   const idleListenerRef = useRef(false);
 
   const initMap = (map: google.maps.Map) => {
@@ -143,7 +168,10 @@ export default function ListingsMap({ listings, hoveredId, onHover, onBoundsChan
 
       const marker = new window.google.maps.marker.AdvancedMarkerElement({
         map: null, // clusterer manages map assignment
-        position: { lat: Number(listing.latitude!), lng: Number(listing.longitude!) },
+        position: {
+          lat: Number(listing.latitude!),
+          lng: Number(listing.longitude!),
+        },
         title: listing.title,
         content: pill,
       });
@@ -229,7 +257,10 @@ export default function ListingsMap({ listings, hoveredId, onHover, onBoundsChan
         className="w-full h-full"
         initialCenter={{ lat: 38.5, lng: -96 }}
         initialZoom={4}
-        onMapReady={(map) => { initMap(map); placeMarkers(map, listings); }}
+        onMapReady={(map) => {
+          initMap(map);
+          placeMarkers(map, listings);
+        }}
       />
 
       {/* Popup card */}
@@ -253,17 +284,30 @@ export default function ListingsMap({ listings, hoveredId, onHover, onBoundsChan
               src={selectedListing.imageUrl || PLACEHOLDER}
               alt={selectedListing.title}
               className="w-full h-full object-cover"
-              onError={(e) => { (e.target as HTMLImageElement).src = PLACEHOLDER; }}
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = PLACEHOLDER;
+              }}
             />
           </div>
 
           <div className="p-3">
-            {formatLocation(selectedListing.city, selectedListing.region, selectedListing.country) && (
+            {formatLocation(
+              selectedListing.city,
+              selectedListing.region,
+              selectedListing.country,
+            ) && (
               <p className="text-[10px] font-medium tracking-widest uppercase text-muted-foreground mb-1">
-                {formatLocation(selectedListing.city, selectedListing.region, selectedListing.country)}
+                {formatLocation(
+                  selectedListing.city,
+                  selectedListing.region,
+                  selectedListing.country,
+                )}
               </p>
             )}
-            <h3 className="text-sm leading-snug text-foreground mb-2 line-clamp-2" style={{fontFamily: "'Playfair Display', Georgia, serif"}}>
+            <h3
+              className="text-sm leading-snug text-foreground mb-2 line-clamp-2"
+              style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
+            >
               {selectedListing.title}
             </h3>
             <div className="flex items-center justify-between">
@@ -287,7 +331,10 @@ export default function ListingsMap({ listings, hoveredId, onHover, onBoundsChan
               {selectedListing.bedrooms ? (
                 <div className="flex items-center gap-1 text-xs text-muted-foreground">
                   <BedDouble className="w-3 h-3" />
-                  <span>{selectedListing.bedrooms} bed{selectedListing.bedrooms !== 1 ? "s" : ""}</span>
+                  <span>
+                    {selectedListing.bedrooms} bed
+                    {selectedListing.bedrooms !== 1 ? "s" : ""}
+                  </span>
                 </div>
               ) : null}
             </div>

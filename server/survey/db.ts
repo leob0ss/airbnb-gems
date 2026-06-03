@@ -3,7 +3,9 @@ import { neon } from "@neondatabase/serverless";
 let schemaReady: Promise<void> | null = null;
 
 function getPostgresUrl(): string | null {
-  return process.env.POSTGRES_URL ?? process.env.POSTGRES_URL_NON_POOLING ?? null;
+  return (
+    process.env.POSTGRES_URL ?? process.env.POSTGRES_URL_NON_POOLING ?? null
+  );
 }
 
 export function isSurveyDbConfigured(): boolean {
@@ -47,7 +49,7 @@ export async function insertSurveyResponse(
   followup: string | null,
   sessionId: string | null,
   activeCategory: string | null,
-  activeState: string | null
+  activeState: string | null,
 ): Promise<number> {
   const url = getPostgresUrl();
   if (!url) {

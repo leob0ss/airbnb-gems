@@ -52,20 +52,20 @@
   --primary-foreground: oklch(1 0 0);
   /* Background: pure white like Airbnb */
   --background: oklch(1 0 0);
-  --foreground: oklch(0.16 0 0);          /* #222222 */
+  --foreground: oklch(0.16 0 0); /* #222222 */
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.16 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.16 0 0);
-  --secondary: oklch(0.97 0 0);           /* #F7F7F7 */
+  --secondary: oklch(0.97 0 0); /* #F7F7F7 */
   --secondary-foreground: oklch(0.16 0 0);
   --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.44 0 0);    /* #717171 */
+  --muted-foreground: oklch(0.44 0 0); /* #717171 */
   --accent: oklch(0.97 0 0);
   --accent-foreground: oklch(0.16 0 0);
   --destructive: oklch(0.62 0.23 15);
   --destructive-foreground: oklch(1 0 0);
-  --border: oklch(0.88 0 0);              /* #DDDDDD */
+  --border: oklch(0.88 0 0); /* #DDDDDD */
   --input: oklch(0.88 0 0);
   --ring: oklch(0.62 0.23 15);
   /* Airbnb border-radius: cards use 12px */
@@ -73,8 +73,8 @@
   --chart-1: oklch(0.62 0.23 15);
   --chart-2: oklch(0.65 0.08 200);
   --chart-3: oklch(0.75 0.06 150);
-  --chart-4: oklch(0.60 0.10 280);
-  --chart-5: oklch(0.70 0.09 90);
+  --chart-4: oklch(0.6 0.1 280);
+  --chart-5: oklch(0.7 0.09 90);
   --sidebar: oklch(1 0 0);
   --sidebar-foreground: oklch(0.16 0 0);
   --sidebar-primary: oklch(0.62 0.23 15);
@@ -108,8 +108,8 @@
   --chart-1: oklch(0.62 0.23 15);
   --chart-2: oklch(0.65 0.08 200);
   --chart-3: oklch(0.75 0.06 150);
-  --chart-4: oklch(0.60 0.10 280);
-  --chart-5: oklch(0.70 0.09 90);
+  --chart-4: oklch(0.6 0.1 280);
+  --chart-5: oklch(0.7 0.09 90);
   --sidebar: oklch(0.21 0.006 285.885);
   --sidebar-foreground: oklch(0.92 0 0);
   --sidebar-accent: oklch(0.274 0.006 286.033);
@@ -124,14 +124,31 @@
   }
   body {
     @apply bg-background text-foreground;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-family:
+      "Inter",
+      -apple-system,
+      BlinkMacSystemFont,
+      "Segoe UI",
+      Roboto,
+      sans-serif;
     font-size: 14px;
     line-height: 1.43;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
-  h1, h2, h3, h4, h5, h6 {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family:
+      "Inter",
+      -apple-system,
+      BlinkMacSystemFont,
+      "Segoe UI",
+      Roboto,
+      sans-serif;
     font-weight: 600;
     letter-spacing: -0.01em;
   }
@@ -162,8 +179,12 @@
 
 /* ─── Skeleton shimmer ──────────────────────────────────────────────────── */
 @keyframes shimmer {
-  0%   { background-position: -200% 0; }
-  100% { background-position:  200% 0; }
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
 }
 .skeleton {
   background: linear-gradient(

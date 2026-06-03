@@ -60,7 +60,10 @@ export default function MissingFilterModal({
         }),
       });
 
-      const data = (await response.json()) as { success?: boolean; error?: string };
+      const data = (await response.json()) as {
+        success?: boolean;
+        error?: string;
+      };
 
       if (!response.ok || !data.success) {
         setSubmitError(data.error ?? "Something went wrong. Please try again.");
@@ -84,7 +87,10 @@ export default function MissingFilterModal({
       }}
     >
       {/* Scrim */}
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
+      <div
+        className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+        onClick={onClose}
+      />
 
       {/* Panel */}
       <div className="relative z-10 w-full max-w-md bg-foreground text-background rounded-2xl shadow-2xl p-6 flex flex-col gap-5">
@@ -152,7 +158,9 @@ export default function MissingFilterModal({
               )}
             </div>
 
-            {submitError && <p className="text-xs text-red-400">{submitError}</p>}
+            {submitError && (
+              <p className="text-xs text-red-400">{submitError}</p>
+            )}
             <button
               type="submit"
               disabled={!whatLookingFor.trim() || isSubmitting}

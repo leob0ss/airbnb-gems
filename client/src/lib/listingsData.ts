@@ -49,7 +49,10 @@ export function loadListings(): Promise<StaticListing[]> {
   return loadPromise;
 }
 
-function matchesCategory(categories: string | null, category?: string): boolean {
+function matchesCategory(
+  categories: string | null,
+  category?: string,
+): boolean {
   if (!category) return true;
   if (!categories) return false;
   return categories.toLowerCase().includes(category.toLowerCase());
@@ -63,19 +66,19 @@ function matchesRegion(region: string | null, filterRegion?: string): boolean {
 
 export function filterListings(
   listings: StaticListing[],
-  filters: ListingFilters
+  filters: ListingFilters,
 ): StaticListing[] {
   return listings.filter(
     (listing) =>
       matchesCategory(listing.categories, filters.category) &&
-      matchesRegion(listing.region, filters.region)
+      matchesRegion(listing.region, filters.region),
   );
 }
 
 export function paginateListings(
   listings: StaticListing[],
   page: number,
-  limit: number
+  limit: number,
 ): StaticListing[] {
   const offset = (page - 1) * limit;
   return listings.slice(offset, offset + limit);

@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { detectCategories, extractListingData, matchPublicationsInText } from "./scraper/badgeExtractor";
+import {
+  detectCategories,
+  extractListingData,
+  matchPublicationsInText,
+} from "./scraper/badgeExtractor";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -64,7 +68,7 @@ describe("badge extraction — subtitleHtml.htmlText pattern", () => {
     expect(result.badges!.length).toBeGreaterThanOrEqual(1);
 
     const badge = result.badges!.find(
-      (b) => b.badgeType === "LISTING_DESIGN_PUBLICATIONS"
+      (b) => b.badgeType === "LISTING_DESIGN_PUBLICATIONS",
     );
     expect(badge).toBeDefined();
     expect(badge!.value).toBe("Dwell, October 2024");
@@ -87,7 +91,7 @@ describe("badge extraction — subtitleHtml.htmlText pattern", () => {
 
     const result = extractListingData(html);
     const badge = result.badges!.find(
-      (b) => b.badgeType === "LISTING_NOTABLE_DESIGNER"
+      (b) => b.badgeType === "LISTING_NOTABLE_DESIGNER",
     );
     expect(badge).toBeDefined();
     expect(badge!.value).toBe("Tadao Ando");
@@ -123,7 +127,7 @@ describe("badge extraction — subtitleHtml.htmlText pattern", () => {
 
     const result = extractListingData(html);
     const badge = result.badges!.find(
-      (b) => b.badgeType === "LISTING_DESIGN_PUBLICATIONS"
+      (b) => b.badgeType === "LISTING_DESIGN_PUBLICATIONS",
     );
     expect(badge).toBeDefined();
     expect(badge!.value).toBe("Dezeen");
@@ -142,7 +146,7 @@ describe("badge extraction — subtitleHtml.htmlText pattern", () => {
 
     const result = extractListingData(html);
     const badge = result.badges!.find(
-      (b) => b.badgeType === "LISTING_DESIGN_PUBLICATIONS"
+      (b) => b.badgeType === "LISTING_DESIGN_PUBLICATIONS",
     );
     expect(badge).toBeDefined();
     expect(badge!.value).toBe("Remodelista");
@@ -165,7 +169,7 @@ describe("badge extraction — subtitleHtml.htmlText pattern", () => {
 
     const result = extractListingData(html);
     const badge = result.badges!.find(
-      (b) => b.badgeType === "LISTING_DESIGN_PUBLICATIONS"
+      (b) => b.badgeType === "LISTING_DESIGN_PUBLICATIONS",
     );
     // Should not extract this as a publication badge
     expect(badge).toBeUndefined();
@@ -175,7 +179,7 @@ describe("badge extraction — subtitleHtml.htmlText pattern", () => {
 describe("matchPublicationsInText", () => {
   it("matches 'featured in Dwell' in description", () => {
     const badges = matchPublicationsInText(
-      "This home was featured in Dwell magazine in 2023."
+      "This home was featured in Dwell magazine in 2023.",
     );
     expect(badges.some((b) => b.value === "Dwell")).toBe(true);
   });
@@ -192,10 +196,14 @@ describe("detectCategories", () => {
   });
 
   it("detects Treehouse", () => {
-    expect(detectCategories("Treehouse in the Redwoods", "")).toContain("Treehouse");
+    expect(detectCategories("Treehouse in the Redwoods", "")).toContain(
+      "Treehouse",
+    );
   });
 
   it("returns empty array for generic home", () => {
-    expect(detectCategories("Nice house", "Great location near the beach")).toHaveLength(0);
+    expect(
+      detectCategories("Nice house", "Great location near the beach"),
+    ).toHaveLength(0);
   });
 });

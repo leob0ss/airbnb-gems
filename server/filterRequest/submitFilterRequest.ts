@@ -16,7 +16,7 @@ function validateEmail(email: string): boolean {
 }
 
 export function parseFilterRequestInput(
-  body: unknown
+  body: unknown,
 ): FilterRequestSubmitResult | FilterRequestSubmitInput {
   if (!body || typeof body !== "object") {
     return { success: false, error: "Invalid request body." };
@@ -25,11 +25,17 @@ export function parseFilterRequestInput(
   const { whatLookingFor, email, sessionId } = body as Record<string, unknown>;
 
   if (typeof whatLookingFor !== "string" || !whatLookingFor.trim()) {
-    return { success: false, error: "Please describe what you're looking for." };
+    return {
+      success: false,
+      error: "Please describe what you're looking for.",
+    };
   }
 
   if (whatLookingFor.trim().length > 1000) {
-    return { success: false, error: "Description must be at most 1000 characters." };
+    return {
+      success: false,
+      error: "Description must be at most 1000 characters.",
+    };
   }
 
   let normalizedEmail: string | null = null;
@@ -55,7 +61,9 @@ export function parseFilterRequestInput(
   };
 }
 
-export async function submitFilterRequest(body: unknown): Promise<FilterRequestSubmitResult> {
+export async function submitFilterRequest(
+  body: unknown,
+): Promise<FilterRequestSubmitResult> {
   const parsed = parseFilterRequestInput(body);
   if ("success" in parsed) return parsed;
 
@@ -69,7 +77,7 @@ export async function submitFilterRequest(body: unknown): Promise<FilterRequestS
   const id = await insertFilterRequest(
     parsed.whatLookingFor,
     parsed.email ?? null,
-    parsed.sessionId ?? null
+    parsed.sessionId ?? null,
   );
 
   const emailLine = parsed.email ? `\n\nEmail: ${parsed.email}` : "";
