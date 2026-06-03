@@ -3,10 +3,10 @@
  *
  * Flow:
  *   Step 1: "Did you find what you were looking for?" → Yes / Not yet / Dismiss
- *            → Answer is submitted to DB immediately on button click
- *   Step 2: Contextual free-text follow-up (optional — user can skip)
- *            → If submitted, a second POST updates with the follow-up text
+ *   Step 2: Optional free-text follow-up (Send or Skip)
  *   Step 3: Thank-you message, then auto-dismiss after 3s
+ *
+ * Submits once when the user finishes (Skip, Send, or dismiss from follow-up).
  */
 import { X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -30,34 +30,56 @@ export default function SurveyBanner({
   const [answer, setAnswer] = useState<"yes" | "no" | null>(null);
   const [followupText, setFollowupText] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState("");
+  const [submitted, setSubmitted] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  async function postSurvey(payload: {
-    answer: "yes" | "no";
-    followup: string | null;
-    sessionId: string;
-    activeCategory: string;
-    activeState: string | null;
-  }) {
+  async function postSurvey(followup: string | null) {
+    if (!answer) return;
+
     const response = await fetch("/api/survey", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
+      body: JSON.stringify({
+        answer,
+        followup,
+        sessionId,
+        activeCategory,
+        activeState,
+      }),
     });
-    const data = (await response.json()) as { success?: boolean };
+    const data = (await response.json()) as { success?: boolean; error?: string };
     if (!response.ok || !data.success) {
-      throw new Error("Survey submit failed");
+      throw new Error(data.error ?? "Survey submit failed");
+    }
+    setSubmitted(true);
+  }
+
+  async function finishSurvey(followup: string | null) {
+    if (submitted) {
+      setStep("thanks");
+      return;
+    }
+
+    setIsSubmitting(true);
+    setSubmitError("");
+
+    try {
+      await postSurvey(followup);
+      setStep("thanks");
+    } catch {
+      setSubmitError("Could not save your response. Please try again.");
+    } finally {
+      setIsSubmitting(false);
     }
   }
 
-  // Auto-focus the input when we reach the follow-up step
   useEffect(() => {
     if (step === "followup") {
       setTimeout(() => inputRef.current?.focus(), 50);
     }
   }, [step]);
 
-  // Auto-dismiss after showing thanks
   useEffect(() => {
     if (step === "thanks") {
       const t = setTimeout(onDismiss, 3000);
@@ -65,48 +87,27 @@ export default function SurveyBanner({
     }
   }, [step, onDismiss]);
 
-  // Submit the answer immediately when Yes/Not yet is clicked
-  async function handleAnswer(a: "yes" | "no") {
+  function handleAnswer(a: "yes" | "no") {
     setAnswer(a);
-    void postSurvey({
-      answer: a,
-      followup: null,
-      sessionId,
-      activeCategory,
-      activeState,
-    }).catch(() => {});
     setStep("followup");
   }
 
-  async function handleSubmitFollowup() {
-    if (!followupText.trim()) {
-      setStep("thanks");
+  function handleDismiss() {
+    if (step === "followup" && answer && !submitted) {
+      setIsSubmitting(true);
+      setSubmitError("");
+      void postSurvey(null)
+        .then(() => onDismiss())
+        .catch(() => setSubmitError("Could not save your response. Please try again."))
+        .finally(() => setIsSubmitting(false));
       return;
     }
-    setIsSubmitting(true);
-    try {
-      await postSurvey({
-        answer: answer!,
-        followup: followupText.trim(),
-        sessionId,
-        activeCategory,
-        activeState,
-      });
-      setStep("thanks");
-    } catch {
-      setStep("thanks");
-    } finally {
-      setIsSubmitting(false);
-    }
-  }
-
-  function handleSkip() {
-    setStep("thanks");
+    onDismiss();
   }
 
   function handleKeyDown(e: React.KeyboardEvent) {
-    if (e.key === "Enter") handleSubmitFollowup();
-    if (e.key === "Escape") onDismiss();
+    if (e.key === "Enter") void finishSurvey(followupText.trim() || null);
+    if (e.key === "Escape") handleDismiss();
   }
 
   const followupPrompt =
@@ -121,7 +122,6 @@ export default function SurveyBanner({
       className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 w-[calc(100%-2rem)] max-w-md"
     >
       <div className="bg-foreground text-background rounded-2xl shadow-2xl px-5 py-4 flex flex-col gap-3">
-        {/* Header row */}
         <div className="flex items-start justify-between gap-3">
           <p className="text-sm font-semibold leading-snug">
             {step === "question" && "Did you find what you were looking for?"}
@@ -129,7 +129,7 @@ export default function SurveyBanner({
             {step === "thanks" && "Thanks for the feedback! 🙏"}
           </p>
           <button
-            onClick={onDismiss}
+            onClick={handleDismiss}
             aria-label="Dismiss"
             className="flex-shrink-0 opacity-60 hover:opacity-100 transition-opacity mt-0.5"
           >
@@ -137,7 +137,6 @@ export default function SurveyBanner({
           </button>
         </div>
 
-        {/* Step 1: Yes / Not yet buttons */}
         {step === "question" && (
           <div className="flex gap-2">
             <button
@@ -155,7 +154,6 @@ export default function SurveyBanner({
           </div>
         )}
 
-        {/* Step 2: Optional free-text follow-up */}
         {step === "followup" && (
           <>
             <div className="flex gap-2">
@@ -170,7 +168,7 @@ export default function SurveyBanner({
                 className="flex-1 bg-background/15 text-background placeholder:text-background/50 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-background/40"
               />
               <button
-                onClick={handleSubmitFollowup}
+                onClick={() => void finishSurvey(followupText.trim() || null)}
                 disabled={isSubmitting}
                 className="px-4 py-2 rounded-xl text-sm font-semibold bg-background text-foreground hover:bg-background/90 disabled:opacity-50 transition-colors"
               >
@@ -178,15 +176,16 @@ export default function SurveyBanner({
               </button>
             </div>
             <button
-              onClick={handleSkip}
-              className="text-xs text-background/50 hover:text-background/80 transition-colors text-left"
+              onClick={() => void finishSurvey(null)}
+              disabled={isSubmitting}
+              className="text-xs text-background/50 hover:text-background/80 transition-colors text-left disabled:opacity-50"
             >
               Skip
             </button>
+            {submitError && <p className="text-xs text-red-400">{submitError}</p>}
           </>
         )}
 
-        {/* Step 3: Thanks — auto-dismisses */}
         {step === "thanks" && (
           <p className="text-xs text-background/60">
             Your response helps us improve the tool.
