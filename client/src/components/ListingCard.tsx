@@ -39,6 +39,10 @@ function formatLocation(
   return parts.join(", ");
 }
 
+function formatRating(rating: number): string {
+  return Math.min(5, Math.max(0, rating)).toFixed(1);
+}
+
 export default function ListingCard({
   listing,
   onTrackedClick,
@@ -87,12 +91,12 @@ export default function ListingCard({
           <p className="text-sm font-semibold text-foreground leading-snug line-clamp-1 flex-1">
             {listing.title}
           </p>
-          {listing.rating ? (
+          {listing.rating != null ? (
             <div className="flex items-center gap-1 flex-shrink-0">
               <Star className="w-3 h-3 fill-foreground text-foreground" />
               <span className="text-sm text-foreground">
-                {listing.rating.toFixed(2)}
-                {listing.reviewCount ? (
+                {formatRating(listing.rating)}
+                {listing.reviewCount != null ? (
                   <span className="text-muted-foreground font-normal">
                     {" "}
                     ({listing.reviewCount.toLocaleString()})

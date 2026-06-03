@@ -71,6 +71,44 @@ function parseNumber(value) {
   return Number.isNaN(n) ? null : n;
 }
 
+/**
+ * Airbnb ratings are 0–5. Some scraped rows merged review counts into the rating
+ * decimal (e.g. "5.07" → 5.0 stars, 7 reviews) when reviewCount was empty.
+ */
+function normalizeRatingReview(rawRating, rawReviewCount) {
+  let rating = parseNumber(rawRating);
+  let reviewCount = parseNumber(rawReviewCount);
+
+  if (rating == null) {
+    return { rating: null, reviewCount: reviewCount != null ? Math.round(reviewCount) : null };
+  }
+
+  if (rating > 5 && rating < 6 && reviewCount == null) {
+    const ratingStr = String(rawRating).trim();
+    const dot = ratingStr.indexOf(".");
+    if (dot !== -1) {
+      const decoded = parseInt(ratingStr.slice(dot + 1), 10);
+      if (!Number.isNaN(decoded) && decoded > 0) {
+        reviewCount = decoded;
+      }
+    }
+    rating = 5;
+  } else if (rating > 5) {
+    rating = null;
+  }
+
+  if (rating != null) {
+    rating = Math.min(5, Math.max(0, rating));
+  }
+
+  if (reviewCount != null) {
+    reviewCount = Math.round(reviewCount);
+    if (reviewCount <= 0) reviewCount = null;
+  }
+
+  return { rating, reviewCount };
+}
+
 function rowToListing(headers, values) {
   const record = {};
   for (let i = 0; i < headers.length; i++) {
@@ -79,14 +117,16 @@ function rowToListing(headers, values) {
 
   if (record.active !== "yes") return null;
 
+  const { rating, reviewCount } = normalizeRatingReview(record.rating, record.reviewCount);
+
   return {
     id: parseNumber(record.id),
     airbnbId: record.airbnbId,
     title: record.title,
     imageUrl: emptyToNull(record.imageUrl),
     airbnbUrl: record.airbnbUrl,
-    rating: parseNumber(record.rating),
-    reviewCount: parseNumber(record.reviewCount),
+    rating,
+    reviewCount,
     pricePerNight: parseNumber(record.pricePerNight),
     bedrooms: parseNumber(record.bedrooms),
     city: emptyToNull(record.city),
