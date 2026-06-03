@@ -1,1 +1,0 @@
-ALTER TABLE `listings` MODIFY COLUMN `airbnbId` varchar(24) NOT NULL;

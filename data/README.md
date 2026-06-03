@@ -1,38 +1,28 @@
 # Data pipeline
 
-The canonical listing dataset lives in **`listings-export.csv`** (~1,195 rows). Import it with:
+The canonical listing dataset is **`listings-export.csv`** (~1,195 rows).
+
+## Update listings (normal workflow)
 
 ```bash
-pnpm db:import
+pnpm data:json
+git add data/listings-export.csv client/public/listings.json
+git commit -m "Update listings"
+git push
 ```
 
-## Refresh listings from Airbnb
+## Optional: scrape new candidates from Airbnb
+
+Use `scrape-state-generic.mjs` to discover listings, then merge into the CSV manually:
 
 1. Update `SESSION_COOKIE` in `scrape-state-generic.mjs` (copy from browser DevTools).
-2. Scrape a state + keyword:
+2. Run:
 
    ```bash
    node data/scrape-state-generic.mjs --state Oregon --keyword treehouse
    node data/scrape-state-generic.mjs --state Colorado --keyword a-frame
    ```
 
-   Output: `/tmp/{state}-{keyword}-highs.json`
+   Output: `/tmp/{state}-{keyword}-*.txt`
 
-3. Seed into the database:
-
-   ```bash
-   # Edit COMBOS in seed-new-states.mjs, then:
-   DATABASE_URL=... node data/seed-new-states.mjs
-   ```
-
-## Bulk scrape (all states)
-
-```bash
-DATABASE_URL=... node data/scrape-all-states.mjs
-```
-
-Runs scrapers in parallel and seeds results directly.
-
-## Scoring
-
-Each listing is scored HIGH / MEDIUM / LOW. Only HIGH listings are kept (name match, property type match, or LLM fallback via `BUILT_IN_FORGE_API_*` env vars when running scrapers locally).
+3. Add chosen rows to `listings-export.csv`, then run `pnpm data:json`.

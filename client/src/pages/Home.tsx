@@ -5,7 +5,6 @@ import ListingsMap from "@/components/ListingsMap";
 import MissingFilterModal from "@/components/MissingFilterModal";
 import SurveyBanner from "@/components/SurveyBanner";
 import { useListings } from "@/hooks/useListings";
-import { trpc } from "@/lib/trpc";
 import { ChevronLeft, ChevronRight, Map, LayoutGrid, X, Mail } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 

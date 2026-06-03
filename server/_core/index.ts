@@ -2,12 +2,9 @@ import "dotenv/config";
 import express from "express";
 import { createServer } from "http";
 import net from "net";
-import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { handleContactRequest } from "../contact/http";
 import { handleFilterRequestRequest } from "../filterRequest/http";
 import { handleSurveyRequest } from "../survey/http";
-import { appRouter } from "../routers";
-import { createContext } from "./context";
 import { setupVite, serveStatic } from "./vite";
 
 function isPortAvailable(port: number): Promise<boolean> {
@@ -33,14 +30,6 @@ async function startServer() {
 
   app.use(express.json({ limit: "50mb" }));
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
-
-  app.use(
-    "/api/trpc",
-    createExpressMiddleware({
-      router: appRouter,
-      createContext,
-    })
-  );
 
   app.post("/api/contact", async (req, res) => {
     const response = await handleContactRequest(

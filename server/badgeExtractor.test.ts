@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { extractListingData, matchPublicationsInText } from "./scraper/badgeExtractor";
+import { detectCategories, extractListingData, matchPublicationsInText } from "./scraper/badgeExtractor";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -183,5 +183,19 @@ describe("matchPublicationsInText", () => {
   it("does not match casual mentions without context", () => {
     const badges = matchPublicationsInText("We love Dwell-style interiors.");
     expect(badges.some((b) => b.value === "Dwell")).toBe(false);
+  });
+});
+
+describe("detectCategories", () => {
+  it("detects A-frame", () => {
+    expect(detectCategories("Cozy A-Frame Retreat", "")).toContain("A-frame");
+  });
+
+  it("detects Treehouse", () => {
+    expect(detectCategories("Treehouse in the Redwoods", "")).toContain("Treehouse");
+  });
+
+  it("returns empty array for generic home", () => {
+    expect(detectCategories("Nice house", "Great location near the beach")).toHaveLength(0);
   });
 });
