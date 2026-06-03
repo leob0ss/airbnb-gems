@@ -1,5 +1,6 @@
 import { insertPaywallEvent, isPaywallDbConfigured } from "./db.js";
 import { notifyOwner } from "../_core/notification.js";
+import { formatPacificTimestamp } from "../_core/pacificTime.js";
 
 export type PaywallEventResult =
   | { success: true; id: number }
@@ -60,7 +61,7 @@ export async function submitPaywallEvent(body: unknown): Promise<PaywallEventRes
       : "";
     await notifyOwner({
       title: notification.title,
-      content: `${notification.content}${sessionLine}`,
+      content: `${notification.content}\n\nTime: ${formatPacificTimestamp()}${sessionLine}`,
     });
   }
 

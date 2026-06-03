@@ -11,16 +11,16 @@
   ],
   "functions": {
     "api/contact.ts": {
-      "includeFiles": "server/contact/**,server/_core/env.ts,server/_core/notification.ts"
+      "includeFiles": "server/contact/**,server/_core/env.ts,server/_core/notification.ts,server/_core/pacificTime.ts"
     },
     "api/filter-request.ts": {
-      "includeFiles": "server/filterRequest/**,server/_core/env.ts,server/_core/notification.ts"
+      "includeFiles": "server/filterRequest/**,server/_core/env.ts,server/_core/notification.ts,server/_core/pacificTime.ts"
     },
     "api/survey.ts": {
-      "includeFiles": "server/survey/**,server/_core/env.ts,server/_core/notification.ts"
+      "includeFiles": "server/survey/**,server/_core/env.ts,server/_core/notification.ts,server/_core/pacificTime.ts"
     },
     "api/paywall.ts": {
-      "includeFiles": "server/paywall/**,server/_core/env.ts"
+      "includeFiles": "server/paywall/**,server/_core/env.ts,server/_core/notification.ts,server/_core/pacificTime.ts"
     }
   }
 }

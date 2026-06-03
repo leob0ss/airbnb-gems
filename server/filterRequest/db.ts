@@ -1,4 +1,5 @@
 import { neon } from "@neondatabase/serverless";
+import { migrateSubmittedAtToPacific } from "../_core/pacificTime.js";
 
 let schemaReady: Promise<void> | null = null;
 
@@ -25,9 +26,10 @@ async function ensureSchemaOnce(): Promise<void> {
           what_looking_for TEXT NOT NULL,
           email VARCHAR(320),
           session_id VARCHAR(64),
-          submitted_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+          submitted_at TIMESTAMP NOT NULL DEFAULT (NOW() AT TIME ZONE 'America/Los_Angeles')
         )
       `;
+      await migrateSubmittedAtToPacific(sql, "filter_requests");
       await sql`
         CREATE INDEX IF NOT EXISTS idx_filter_requests_time
         ON filter_requests (submitted_at DESC)

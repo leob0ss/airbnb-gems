@@ -1,4 +1,5 @@
 import { neon } from "@neondatabase/serverless";
+import { migrateSubmittedAtToPacific } from "../_core/pacificTime.js";
 
 let schemaReady: Promise<void> | null = null;
 
@@ -22,9 +23,10 @@ async function ensureSchemaOnce(): Promise<void> {
           id SERIAL PRIMARY KEY,
           event VARCHAR(32) NOT NULL,
           session_id VARCHAR(64),
-          submitted_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+          submitted_at TIMESTAMP NOT NULL DEFAULT (NOW() AT TIME ZONE 'America/Los_Angeles')
         )
       `;
+      await migrateSubmittedAtToPacific(sql, "paywall_events");
       await sql`
         CREATE INDEX IF NOT EXISTS idx_paywall_events_time
         ON paywall_events (submitted_at DESC)
