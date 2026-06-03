@@ -72,33 +72,16 @@ function parseNumber(value) {
 }
 
 /**
- * Airbnb ratings are 0–5. Some scraped rows merged review counts into the rating
- * decimal (e.g. "5.07" → 5.0 stars, 7 reviews) when reviewCount was empty.
+ * Airbnb star ratings are 0–5. Scraped averages can slightly exceed 5 (e.g. 5.058)
+ * while Airbnb displays 5.0 — cap overflow, don't treat decimals as review counts.
  */
 function normalizeRatingReview(rawRating, rawReviewCount) {
   let rating = parseNumber(rawRating);
   let reviewCount = parseNumber(rawReviewCount);
 
-  if (rating == null) {
-    return { rating: null, reviewCount: reviewCount != null ? Math.round(reviewCount) : null };
-  }
-
-  if (rating > 5 && rating < 6 && reviewCount == null) {
-    const ratingStr = String(rawRating).trim();
-    const dot = ratingStr.indexOf(".");
-    if (dot !== -1) {
-      const decoded = parseInt(ratingStr.slice(dot + 1), 10);
-      if (!Number.isNaN(decoded) && decoded > 0) {
-        reviewCount = decoded;
-      }
-    }
-    rating = 5;
-  } else if (rating > 5) {
-    rating = null;
-  }
-
   if (rating != null) {
-    rating = Math.min(5, Math.max(0, rating));
+    if (rating > 5) rating = 5;
+    rating = Math.max(0, rating);
   }
 
   if (reviewCount != null) {

@@ -26,3 +26,15 @@ Use `scrape-state-generic.mjs` to discover listings, then merge into the CSV man
    Output: `/tmp/{state}-{keyword}-*.txt`
 
 3. Add chosen rows to `listings-export.csv`, then run `pnpm data:json`.
+
+## Refresh ratings & review counts (existing CSV)
+
+Fetches current stats from each listing's Airbnb page (~0.75s per row):
+
+```bash
+pnpm data:enrich              # rows missing reviewCount
+pnpm data:enrich -- --limit 20   # test batch
+pnpm data:json
+```
+
+Use `--force` to refresh all rows. Counts reflect when you run the script, not live Airbnb.

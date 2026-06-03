@@ -7,6 +7,7 @@
 import { writeFileSync } from "fs";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
+import { parseStatsFromHtml, normalizeRating } from "../scripts/lib/airbnb-stats.mjs";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 // ─── CLI args ─────────────────────────────────────────────────────────────────
@@ -129,7 +130,8 @@ async function scrapePage(cursor) {
         lng: coord.longitude ?? null,
         imageUrl: r.contextualPictures?.[0]?.picture ?? "",
         airbnbUrl: `https://www.airbnb.com/rooms/${id}`,
-        rating: r.avgRatingLocalized ?? null,
+        rating: normalizeRating(r.avgRatingLocalized),
+        reviewCount: r.reviewsCount ?? r.reviewCount ?? null,
         priceLabel: r.structuredDisplayPrice?.primaryLine?.price ?? null,
       };
     })
@@ -155,9 +157,10 @@ async function fetchListingDetails(listingId) {
       : "";
     const propTypeMatch = html.match(/"propertyType"\s*:\s*"([^"]+)"/);
     const propertyType = propTypeMatch ? propTypeMatch[1] : "";
-    return { description, propertyType };
+    const { rating, reviewCount } = parseStatsFromHtml(html);
+    return { description, propertyType, rating, reviewCount };
   } catch {
-    return { description: "", propertyType: "" };
+    return { description: "", propertyType: "", rating: null, reviewCount: null };
   }
 }
 
@@ -168,7 +171,9 @@ async function scoreListing(listing) {
   if (listing.name.toLowerCase().includes(kw)) return "HIGH";
   if ((listing.cardTitle ?? "").toLowerCase().includes(kw)) return "HIGH";
 
-  const { description, propertyType } = await fetchListingDetails(listing.id);
+  const { description, propertyType, rating, reviewCount } = await fetchListingDetails(listing.id);
+  if (rating != null) listing.rating = rating;
+  if (reviewCount != null) listing.reviewCount = reviewCount;
 
   // Fast-path 2: Airbnb's own propertyType field matches the keyword.
   // e.g. propertyType="Treehouse" for "Tree Top Studio" → HIGH

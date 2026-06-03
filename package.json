@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "NODE_ENV=development tsx watch server/_core/index.ts",
     "data:json": "node scripts/csv-to-json.mjs",
+    "data:enrich": "node scripts/enrich-listing-stats.mjs",
     "build:client": "pnpm data:json && vite build",
     "build": "pnpm build:client",
     "vercel-build": "pnpm build:client",
