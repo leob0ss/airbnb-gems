@@ -33,8 +33,8 @@ function getSessionId(): string {
 
 const ITEMS_PER_PAGE = 24;
 
-// Category definitions
-const CATEGORIES = [
+// Listing category tabs (filter listings)
+const LISTING_CATEGORIES = [
   {
     id: "Treehouse",
     label: "Treehouses",
@@ -77,7 +77,68 @@ const CATEGORIES = [
   },
 ] as const;
 
-type CategoryId = (typeof CATEGORIES)[number]["id"];
+type ListingCategoryId = (typeof LISTING_CATEGORIES)[number]["id"];
+
+const OTHER_CATEGORY_TAB = {
+  label: "Other",
+  icon: (
+    <svg
+      viewBox="0 0 32 32"
+      xmlns="http://www.w3.org/2000/svg"
+      className="w-6 h-6"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      aria-hidden="true"
+    >
+      <circle cx="10" cy="16" r="2" fill="currentColor" stroke="none" />
+      <circle cx="16" cy="16" r="2" fill="currentColor" stroke="none" />
+      <circle cx="22" cy="16" r="2" fill="currentColor" stroke="none" />
+    </svg>
+  ),
+} as const;
+
+function categoryTabClass(isActive: boolean): string {
+  return `flex-shrink-0 flex flex-col items-center gap-1 pb-1 px-3 border-b-2 transition-colors ${
+    isActive
+      ? "border-foreground text-foreground"
+      : "border-transparent text-muted-foreground hover:text-foreground hover:border-muted-foreground"
+  }`;
+}
+
+function CategoryTabs({
+  activeCategory,
+  onListingCategoryChange,
+  onOtherClick,
+}: {
+  activeCategory: ListingCategoryId;
+  onListingCategoryChange: (id: ListingCategoryId) => void;
+  onOtherClick: () => void;
+}) {
+  return (
+    <>
+      {LISTING_CATEGORIES.map((cat) => (
+        <button
+          key={cat.id}
+          type="button"
+          onClick={() => onListingCategoryChange(cat.id)}
+          className={categoryTabClass(activeCategory === cat.id)}
+        >
+          {cat.icon}
+          <span className="text-xs font-semibold">{cat.label}</span>
+        </button>
+      ))}
+      <button
+        type="button"
+        onClick={onOtherClick}
+        className={categoryTabClass(false)}
+      >
+        {OTHER_CATEGORY_TAB.icon}
+        <span className="text-xs font-semibold">{OTHER_CATEGORY_TAB.label}</span>
+      </button>
+    </>
+  );
+}
 
 function Pagination({
   page,
@@ -120,11 +181,9 @@ function Pagination({
 function EmptyState({
   hasFilters,
   onClear,
-  onMissingFilter,
 }: {
   hasFilters: boolean;
   onClear: () => void;
-  onMissingFilter?: () => void;
 }) {
   return (
     <div className="flex flex-col items-center justify-center py-24 text-center">
@@ -134,8 +193,8 @@ function EmptyState({
       </h3>
       <p className="text-sm text-muted-foreground mb-6 max-w-sm leading-relaxed">
         {hasFilters
-          ? "We don't have listings for that combination yet. Try removing the state filter, or let us know what you're looking for."
-          : "We don't have listings in this category yet. Let us know what you're looking for and we'll add it."}
+          ? "We don't have listings for that combination yet. Try removing the state filter."
+          : "We don't have listings in this category yet."}
       </p>
       <div className="flex flex-col sm:flex-row items-center gap-3">
         {hasFilters && (
@@ -144,14 +203,6 @@ function EmptyState({
             className="text-sm font-semibold underline text-foreground hover:text-muted-foreground transition-colors"
           >
             Remove filter
-          </button>
-        )}
-        {onMissingFilter && (
-          <button
-            onClick={onMissingFilter}
-            className="text-sm font-semibold px-4 py-2 bg-foreground text-background rounded-full hover:bg-foreground/90 transition-colors"
-          >
-            Tell us what you need
           </button>
         )}
       </div>
@@ -312,7 +363,8 @@ function ContactModal({ onClose }: { onClose: () => void }) {
 }
 
 export default function Home() {
-  const [activeCategory, setActiveCategory] = useState<CategoryId>("Treehouse");
+  const [activeCategory, setActiveCategory] =
+    useState<ListingCategoryId>("Treehouse");
   const [filters, setFilters] = useState<ActiveFilters>({});
   const [page, setPage] = useState(1);
   const [showMap, setShowMap] = useState(false);
@@ -466,7 +518,9 @@ export default function Home() {
     gridRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
-  const currentCategory = CATEGORIES.find((c) => c.id === activeCategory)!;
+  const currentCategory = LISTING_CATEGORIES.find(
+    (c) => c.id === activeCategory,
+  )!;
 
   return (
     <div
@@ -555,35 +609,21 @@ export default function Home() {
           <div className="border-b border-border bg-background flex-shrink-0 z-30">
             <div className="max-w-[1760px] mx-auto px-6 sm:px-10">
               <div className="flex items-center gap-2 py-4">
-                {CATEGORIES.map((cat) => (
-                  <button
-                    key={cat.id}
-                    onClick={() => setActiveCategory(cat.id)}
-                    className={`flex flex-col items-center gap-1 pb-1 px-3 border-b-2 transition-colors ${
-                      activeCategory === cat.id
-                        ? "border-foreground text-foreground"
-                        : "border-transparent text-muted-foreground hover:text-foreground hover:border-muted-foreground"
-                    }`}
-                  >
-                    {cat.icon}
-                    <span className="text-xs font-semibold">{cat.label}</span>
-                  </button>
-                ))}
-                <div className="h-8 w-px bg-border mx-2" />
-                <FilterBar
-                  filters={filters}
-                  availableStates={availableStates}
-                  onFilterChange={setFilters}
-                  inline
-                />
-                {activeFilterLabel && (
-                  <span className="text-sm text-muted-foreground hidden sm:block ml-2">
-                    <span className="font-semibold text-foreground">
-                      {filteredListings.length}
-                    </span>{" "}
-                    {currentCategory.label.toLowerCase()} in {activeFilterLabel}
-                  </span>
-                )}
+                <div className="flex items-center gap-2 overflow-x-auto scrollbar-none flex-1 min-w-0">
+                  <CategoryTabs
+                    activeCategory={activeCategory}
+                    onListingCategoryChange={setActiveCategory}
+                    onOtherClick={() => setMissingFilterOpen(true)}
+                  />
+                </div>
+                <div className="flex-shrink-0">
+                  <FilterBar
+                    filters={filters}
+                    availableStates={availableStates}
+                    onFilterChange={setFilters}
+                    inline
+                  />
+                </div>
               </div>
             </div>
           </div>
@@ -593,7 +633,7 @@ export default function Home() {
             {/* Left: scrollable grid */}
             <div className="w-[45%] xl:w-[40%] overflow-y-auto flex-shrink-0 border-r border-border">
               <div
-                className="p-6 grid grid-cols-1 sm:grid-cols-2 gap-6"
+                className="p-6 grid gap-6 grid-cols-[repeat(auto-fill,minmax(280px,1fr))]"
                 ref={gridRef}
               >
                 {loading
@@ -686,34 +726,15 @@ export default function Home() {
             }`}
           >
             <div className="max-w-[1760px] mx-auto px-6 sm:px-10">
-              <div className="flex items-center gap-2 py-4 overflow-x-auto scrollbar-none">
-                {/* Category tabs */}
-                {CATEGORIES.map((cat) => (
-                  <button
-                    key={cat.id}
-                    onClick={() => setActiveCategory(cat.id)}
-                    className={`flex-shrink-0 flex flex-col items-center gap-1 pb-1 px-3 border-b-2 transition-colors ${
-                      activeCategory === cat.id
-                        ? "border-foreground text-foreground"
-                        : "border-transparent text-muted-foreground hover:text-foreground hover:border-muted-foreground"
-                    }`}
-                  >
-                    {cat.icon}
-                    <span className="text-xs font-semibold">{cat.label}</span>
-                  </button>
-                ))}
-
-                {/* Missing filter CTA */}
-                <button
-                  onClick={() => setMissingFilterOpen(true)}
-                  className="ml-auto flex-shrink-0 flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground border border-border hover:border-foreground/40 rounded-full px-3 py-1.5 transition-colors"
-                >
-                  <span>Missing your filter?</span>
-                </button>
-
-                <div className="hidden sm:block h-8 w-px bg-border mx-2" />
-
-                <div className="hidden sm:block">
+              <div className="flex items-center gap-2 py-4">
+                <div className="flex items-center gap-2 overflow-x-auto scrollbar-none flex-1 min-w-0">
+                  <CategoryTabs
+                    activeCategory={activeCategory}
+                    onListingCategoryChange={setActiveCategory}
+                    onOtherClick={() => setMissingFilterOpen(true)}
+                  />
+                </div>
+                <div className="flex-shrink-0">
                   <FilterBar
                     filters={filters}
                     availableStates={availableStates}
@@ -721,14 +742,6 @@ export default function Home() {
                     inline
                   />
                 </div>
-                {activeFilterLabel && (
-                  <span className="text-sm text-muted-foreground hidden sm:block ml-2">
-                    <span className="font-semibold text-foreground">
-                      {total}
-                    </span>{" "}
-                    {currentCategory.label.toLowerCase()} in {activeFilterLabel}
-                  </span>
-                )}
               </div>
             </div>
           </div>
@@ -747,7 +760,6 @@ export default function Home() {
               <EmptyState
                 hasFilters={Boolean(activeFilterLabel)}
                 onClear={() => setFilters({})}
-                onMissingFilter={() => setMissingFilterOpen(true)}
               />
             ) : (
               <>
@@ -825,7 +837,6 @@ export default function Home() {
 
       {showContact && <ContactModal onClose={() => setShowContact(false)} />}
 
-      {/* Missing filter demand-capture modal */}
       {missingFilterOpen && (
         <MissingFilterModal
           sessionId={sessionId}

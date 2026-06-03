@@ -5,7 +5,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { MapPin, X } from "lucide-react";
 
 const STATE_LABELS: Record<string, string> = {
   AK: "Alaska",
@@ -73,7 +72,7 @@ interface FilterBarProps {
   filters: ActiveFilters;
   availableStates: string[];
   onFilterChange: (filters: ActiveFilters) => void;
-  /** When true, renders just the select + clear — no wrapper div or border */
+  /** When true, renders just the select — no wrapper div or border */
   inline?: boolean;
 }
 
@@ -87,41 +86,24 @@ function StateSelect({
   onFilterChange: (filters: ActiveFilters) => void;
 }) {
   return (
-    <>
-      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-        <MapPin className="w-4 h-4" />
-        <span className="hidden sm:inline">Filter by state</span>
-      </div>
-
-      <Select
-        value={activeState ?? "all"}
-        onValueChange={(val) =>
-          onFilterChange(val === "all" ? {} : { state: val })
-        }
-      >
-        <SelectTrigger className="w-48 h-9 text-sm">
-          <SelectValue placeholder="All states" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="all">All states</SelectItem>
-          {availableStates.map((state) => (
-            <SelectItem key={state} value={state}>
-              {stateLabel(state)}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-
-      {activeState && (
-        <button
-          onClick={() => onFilterChange({})}
-          className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
-        >
-          <X className="w-3 h-3" />
-          Clear
-        </button>
-      )}
-    </>
+    <Select
+      value={activeState ?? "all"}
+      onValueChange={(val) =>
+        onFilterChange(val === "all" ? {} : { state: val })
+      }
+    >
+      <SelectTrigger className="w-48 h-9 text-sm">
+        <SelectValue placeholder="All states" />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="all">All states</SelectItem>
+        {availableStates.map((state) => (
+          <SelectItem key={state} value={state}>
+            {stateLabel(state)}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
   );
 }
 
