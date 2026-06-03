@@ -1,31 +1,12 @@
-import { trpc } from "@/lib/trpc";
 import { Star } from "lucide-react";
 import { useCallback } from "react";
+import type { StaticListing } from "@/lib/listingsData";
 
 interface ListingCardProps {
-  listing: {
-    id: number;
-    airbnbId: string;
-    title: string;
-    imageUrl: string | null;
-    airbnbUrl: string;
-    rating: number | null;
-    reviewCount: number | null;
-    pricePerNight: number | null;
-    city: string | null;
-    region: string | null;
-    country: string | null;
-    publications: string | null;
-    designers: string | null;
-    categories: string | null;
-    description: string | null;
-    signalSource: string;
-    confidence: number | null;
-    bedrooms?: number | null;
-  };
+  listing: StaticListing;
   activeFilter?: string;
   sessionId?: string;
-  /** Called after the click is tracked and the Airbnb tab is opened */
+  /** Called after the user opens the Airbnb listing */
   onTrackedClick?: () => void;
 }
 
@@ -54,21 +35,14 @@ function formatLocation(city: string | null, region: string | null, country: str
   return parts.join(", ");
 }
 
-export default function ListingCard({ listing, activeFilter, sessionId, onTrackedClick }: ListingCardProps) {
-  const trackClick = trpc.listings.trackClick.useMutation();
-
+export default function ListingCard({ listing, onTrackedClick }: ListingCardProps) {
   const imageUrl = listing.imageUrl || getPlaceholder(listing.id);
   const location = formatLocation(listing.city, listing.region, listing.country);
 
   const handleClick = useCallback(() => {
-    trackClick.mutate({
-      listingId: listing.id,
-      activeFilter: activeFilter ?? null,
-      sessionId: sessionId ?? null,
-    });
     window.open(listing.airbnbUrl, "_blank", "noopener,noreferrer");
     onTrackedClick?.();
-  }, [listing.id, listing.airbnbUrl, activeFilter, sessionId, trackClick, onTrackedClick]);
+  }, [listing.airbnbUrl, onTrackedClick]);
 
   return (
     <article

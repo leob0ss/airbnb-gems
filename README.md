@@ -9,82 +9,69 @@ Browse Airbnb listings by architectural category — treehouses, A-frames, and m
 | Layer | Tech |
 |---|---|
 | Frontend | React 19, Vite, Tailwind CSS 4, shadcn/ui |
-| API | tRPC 11, Express (local dev) |
-| Database | MySQL, Drizzle ORM |
-| Deploy | Vercel (static UI + serverless API) |
+| Listings data | Static JSON (`client/public/listings.json`) |
+| Deploy | Vercel (static site) |
+| Optional backend | tRPC + MySQL (local dev only, for future use) |
+
+Listings are served from a static JSON file — no database required in production.
 
 ## Quick start (local)
 
-**Requirements:** Node 22+, pnpm, MySQL
-
 ```bash
 pnpm install
-cp .env.example .env
-
-# Start MySQL (pick one):
-brew services start mysql
-# or: docker compose up -d
-
-mysql -u root -e "CREATE DATABASE IF NOT EXISTS airbnb_gems;"
-pnpm db:migrate
-pnpm db:import
-
+pnpm data:json   # CSV → listings.json (already committed; re-run after CSV updates)
 pnpm dev
 # → http://localhost:3000
 ```
 
 ## Deploy to Vercel
 
-1. Push this repo to GitHub and import it in [Vercel](https://vercel.com).
-2. Set environment variables (Project → Settings → Environment Variables):
+1. Push to GitHub — Vercel redeploys automatically.
+2. No `DATABASE_URL` or backend setup needed for listings.
+3. Optional: set `VITE_GOOGLE_MAPS_API_KEY` for the desktop map view.
 
-   | Variable | Required | Notes |
-   |---|---|---|
-   | `DATABASE_URL` | Yes | Hosted MySQL (Railway, TiDB Cloud, etc.) |
-   | `VITE_GOOGLE_MAPS_API_KEY` | No | Desktop map view |
-   | `NOTIFY_EMAIL` | No | Owner notifications |
-   | `RESEND_API_KEY` | No | Email delivery via [Resend](https://resend.com) |
-   | `RESEND_FROM` | No | Sender address for Resend |
+## Updating listings
 
-3. After the first deploy, seed production from your machine:
+1. Edit `data/listings-export.csv` (or replace it with a new export).
+2. Regenerate JSON and deploy:
 
    ```bash
-   DATABASE_URL="mysql://..." pnpm db:migrate
-   DATABASE_URL="mysql://..." pnpm db:import
+   pnpm data:json
+   git add data/listings-export.csv client/public/listings.json
+   git commit -m "Update listings"
+   git push
    ```
-
-The listing dataset is included at `data/listings-export.csv` (1,195 rows).
 
 ## Scripts
 
 | Command | Description |
 |---|---|
-| `pnpm dev` | Local dev server (Express + Vite) |
-| `pnpm build` | Production frontend build |
+| `pnpm dev` | Local dev server |
+| `pnpm data:json` | Convert CSV → `client/public/listings.json` |
+| `pnpm build` | Regenerate JSON + build for Vercel |
 | `pnpm test` | Run Vitest tests |
-| `pnpm db:migrate` | Apply database migrations |
-| `pnpm db:import` | Import `data/listings-export.csv` into MySQL |
 
-## Data pipeline
+## Optional: local MySQL
 
-To scrape new listings from Airbnb (requires a valid session cookie in the scraper):
+The tRPC backend and import scripts still exist if you want a database locally:
 
 ```bash
-node data/scrape-state-generic.mjs --state Oregon --keyword treehouse
-DATABASE_URL=... node data/seed-new-states.mjs
+cp .env.example .env
+brew services start mysql
+mysql -u root -e "CREATE DATABASE IF NOT EXISTS airbnb_gems;"
+pnpm db:migrate && pnpm db:import
 ```
 
-See `data/README.md` for details.
+This is not used by the Vercel deployment.
 
 ## Project structure
 
 ```
-├── api/trpc/          # Vercel serverless tRPC handler
-├── client/src/        # React frontend (single-page app)
-├── server/            # tRPC routers, DB helpers, scraper
-├── drizzle/           # Database schema + migrations
-├── data/              # Listings export + scrape/seed scripts
-└── scripts/           # Migration helper
+├── client/public/listings.json   # Listing data served to the browser
+├── data/listings-export.csv      # Source of truth for listings
+├── scripts/csv-to-json.mjs       # CSV → JSON converter
+├── client/src/                   # React frontend
+└── server/                       # Legacy tRPC backend (local dev)
 ```
 
 ## Disclaimer

@@ -5,7 +5,8 @@
   "license": "MIT",
   "scripts": {
     "dev": "NODE_ENV=development tsx watch server/_core/index.ts",
-    "build:client": "vite build",
+    "data:json": "node scripts/csv-to-json.mjs",
+    "build:client": "pnpm data:json && vite build",
     "build": "pnpm build:client",
     "vercel-build": "pnpm build:client",
     "start": "NODE_ENV=production tsx server/_core/index.ts",

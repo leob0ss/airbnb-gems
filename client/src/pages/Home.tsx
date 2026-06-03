@@ -4,6 +4,7 @@ import ListingCardSkeleton from "@/components/ListingCardSkeleton";
 import ListingsMap from "@/components/ListingsMap";
 import MissingFilterModal from "@/components/MissingFilterModal";
 import SurveyBanner from "@/components/SurveyBanner";
+import { useListings } from "@/hooks/useListings";
 import { trpc } from "@/lib/trpc";
 import { ChevronLeft, ChevronRight, Map, LayoutGrid, X, Mail } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -287,31 +288,17 @@ export default function Home() {
   };
   const activeFilterLabel = filters.state ? (STATE_LABELS[filters.state] ?? filters.state) : undefined;
 
-  const { data: filtersData } = trpc.listings.getFilters.useQuery();
-  const availableStates = filtersData?.regions ?? [];
-
-  // For map view, fetch all listings (no pagination limit)
-  const { data: allData } = trpc.listings.getAll.useQuery(
-    { region: filters.state, category: activeCategory, page: 1, limit: 500 },
-    { enabled: showMap }
-  );
-
-  const { data, isLoading, isFetching } = trpc.listings.getAll.useQuery({
-    region: filters.state,
-    category: activeCategory,
+  const { listings, filteredListings, total, availableStates, loading } = useListings(
+    { category: activeCategory, region: filters.state },
     page,
-    limit: ITEMS_PER_PAGE,
-  });
-
-  const listings = data?.listings ?? [];
-  const allListings = allData?.listings ?? [];
+    ITEMS_PER_PAGE
+  );
 
   // In map view, filter the grid to only listings within the current map bounds.
   const visibleListings = useMemo(() => {
     if (!showMap) return listings;
-    const source = allListings.length > 0 ? allListings : listings;
-    if (!mapBounds) return source;
-    return source.filter((l) => {
+    if (!mapBounds) return filteredListings;
+    return filteredListings.filter((l) => {
       const lat = l.latitude ? Number(l.latitude) : null;
       const lng = l.longitude ? Number(l.longitude) : null;
       if (!lat || !lng) return false;
@@ -322,9 +309,8 @@ export default function Home() {
         lng <= mapBounds.east
       );
     });
-  }, [listings, allListings, showMap, mapBounds]);
+  }, [listings, filteredListings, showMap, mapBounds]);
 
-  const total = data?.total ?? 0;
   const totalPages = Math.ceil(total / ITEMS_PER_PAGE);
 
   const handlePageChange = (newPage: number) => {
@@ -395,7 +381,7 @@ export default function Home() {
                 />
                 {activeFilterLabel && (
                   <span className="text-sm text-muted-foreground hidden sm:block ml-2">
-                    <span className="font-semibold text-foreground">{allListings.length}</span> {currentCategory.label.toLowerCase()} in {activeFilterLabel}
+                    <span className="font-semibold text-foreground">{filteredListings.length}</span> {currentCategory.label.toLowerCase()} in {activeFilterLabel}
                   </span>
                 )}
               </div>
@@ -407,7 +393,7 @@ export default function Home() {
           {/* Left: scrollable grid */}
           <div className="w-[45%] xl:w-[40%] overflow-y-auto flex-shrink-0 border-r border-border">
             <div className="p-6 grid grid-cols-1 sm:grid-cols-2 gap-6" ref={gridRef}>
-              {isLoading || isFetching
+              {loading
                 ? Array.from({ length: 8 }).map((_, i) => <ListingCardSkeleton key={i} />)
                 : visibleListings.map((listing) => (
                     <div
@@ -423,7 +409,7 @@ export default function Home() {
                     </div>
                   ))}
             </div>
-            {totalPages > 1 && !isLoading && (
+            {totalPages > 1 && !loading && (
               <div className="px-6 pb-6">
                 <Pagination
                   page={page}
@@ -438,7 +424,7 @@ export default function Home() {
           {/* Right: sticky map */}
           <div className="flex-1 relative">
             <ListingsMap
-              listings={allListings.length > 0 ? allListings : listings}
+              listings={filteredListings}
               hoveredId={hoveredId}
               onHover={setHoveredId}
               onBoundsChange={setMapBounds}
@@ -523,7 +509,7 @@ export default function Home() {
           </div>
 
           <main className="max-w-[1760px] mx-auto w-full px-6 sm:px-10 py-8 flex-1" ref={gridRef}>
-          {isLoading || isFetching ? (
+          {loading ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
               {Array.from({ length: ITEMS_PER_PAGE }).map((_, i) => (
                 <ListingCardSkeleton key={i} />
