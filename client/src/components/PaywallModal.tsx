@@ -70,19 +70,15 @@ export default function PaywallModal({
             <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-2">
               Airbnb Gems
             </p>
-            <h2 className="text-xl font-bold text-foreground mb-3 pr-6">
-              Unlock 1,000+ hand-picked Airbnbs
-            </h2>
             <p className="text-sm text-muted-foreground leading-relaxed mb-6">
-              I spent a lot of time manually searching through Airbnb for the
-              best places so you don't have to. It's a tedious process because
-              of all the noise and listings that aren't actually as nice as
-              their pictures.
+              Every day, I manually scout Airbnb for the most unique places to
+              stay at so you don't have to. Unlock below to save lots of time
+              and stay at a place that will create an incredible memory.
             </p>
             <p className="text-sm text-foreground font-medium mb-6">
-              Unlock all of them for a{" "}
-              <span className="font-bold">$9.99 one-time fee</span>. Access
-              everything, forever.
+              Unlock all listings for a{" "}
+              <span className="font-bold">$9.99 one-time fee</span>. Includes
+              current and all future listings. Forever.
             </p>
             <button
               onClick={handleUnlock}

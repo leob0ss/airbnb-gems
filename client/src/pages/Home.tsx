@@ -4,7 +4,6 @@ import ListingCardSkeleton from "@/components/ListingCardSkeleton";
 import ListingsMap from "@/components/ListingsMap";
 import MissingFilterModal from "@/components/MissingFilterModal";
 import PaywallModal from "@/components/PaywallModal";
-import SurveyBanner from "@/components/SurveyBanner";
 import { useListings } from "@/hooks/useListings";
 import {
   incrementListingClickCount,
@@ -18,7 +17,6 @@ import {
   Map,
   LayoutGrid,
   X,
-  Mail,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
@@ -319,7 +317,6 @@ export default function Home() {
   const [page, setPage] = useState(1);
   const [showMap, setShowMap] = useState(false);
   const [showContact, setShowContact] = useState(false);
-  const [showSurvey, setShowSurvey] = useState(false);
   const [showPaywall, setShowPaywall] = useState(false);
   const [missingFilterOpen, setMissingFilterOpen] = useState(false);
   const sessionId = useMemo(() => getSessionId(), []);
@@ -348,8 +345,7 @@ export default function Home() {
       }
 
       window.open(listing.airbnbUrl, "_blank", "noopener,noreferrer");
-      const next = incrementListingClickCount();
-      if (next === 2) setShowSurvey(true);
+      incrementListingClickCount();
     },
     [openPaywall]
   );
@@ -555,12 +551,11 @@ export default function Home() {
             </span>
           </a>
 
-          {/* Contact link */}
           <button
             onClick={() => setShowContact(true)}
             className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
           >
-            Contact
+            Got feedback?
           </button>
         </div>
       </nav>
@@ -678,21 +673,20 @@ export default function Home() {
                   className="text-3xl md:text-4xl leading-[1.1] text-foreground mb-3"
                   style={{
                     fontFamily: "'Fraunces', Georgia, serif",
-                    fontWeight: 300,
+                    fontWeight: 700,
                   }}
                 >
-                  <span style={{ fontWeight: 700 }}>
-                    Airbnb removed their category filters.
-                  </span>
-                  <em className="italic"> We brought them back.</em>
+                  Find the most unique Airbnbs.
                 </h1>
                 <p className="text-sm text-muted-foreground leading-relaxed mb-2">
                   In 2025, Airbnb quietly removed certain categories from its
-                  navigation. Some of us missed them so much that we created
-                  this tool to find them again.
+                  app (treehouse, boat, dome...) making it harder to search
+                  unique listings. This website is the result of spending
+                  hundreds of hours hand-picking the best places I could find
+                  across the US and listing them in one place.
                 </p>
                 <p className="text-xs text-muted-foreground/60">
-                  We are not affiliated with or endorsed by Airbnb, Inc.
+                  We are not affiliated with Airbnb, Inc.
                 </p>
               </div>
             </div>
@@ -842,17 +836,6 @@ export default function Home() {
         </footer>
       )}
 
-      {/* PMF Survey banner */}
-      {showSurvey && (
-        <SurveyBanner
-          sessionId={sessionId}
-          activeCategory={activeCategory}
-          activeState={filters.state ?? null}
-          onDismiss={() => setShowSurvey(false)}
-        />
-      )}
-
-      {/* Contact modal */}
       {showContact && <ContactModal onClose={() => setShowContact(false)} />}
 
       {/* Missing filter demand-capture modal */}
