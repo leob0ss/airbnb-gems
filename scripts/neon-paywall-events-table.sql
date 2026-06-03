@@ -1,7 +1,7 @@
 -- Paywall funnel events (Neon Postgres)
 -- Run once in the Neon SQL editor or: psql $POSTGRES_URL -f scripts/neon-paywall-events-table.sql
 --
--- event values: paywall_shown | unlock_click | dismiss
+-- event values: paywall_paid | paywall_rejected
 
 CREATE TABLE IF NOT EXISTS paywall_events (
   id SERIAL PRIMARY KEY,

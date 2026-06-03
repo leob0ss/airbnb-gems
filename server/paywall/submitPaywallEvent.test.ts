@@ -2,9 +2,9 @@ import { describe, expect, it } from "vitest";
 import { parsePaywallInput } from "./submitPaywallEvent";
 
 describe("parsePaywallInput", () => {
-  it("accepts unlock_click with session", () => {
-    expect(parsePaywallInput({ event: "unlock_click", sessionId: "abc" })).toEqual({
-      event: "unlock_click",
+  it("accepts paywall_paid with session", () => {
+    expect(parsePaywallInput({ event: "paywall_paid", sessionId: "abc" })).toEqual({
+      event: "paywall_paid",
       sessionId: "abc",
     });
   });

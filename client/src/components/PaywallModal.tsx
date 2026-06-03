@@ -1,5 +1,5 @@
 import { X } from "lucide-react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 interface PaywallModalProps {
   sessionId: string;
@@ -14,17 +14,34 @@ export default function PaywallModal({
 }: PaywallModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [unlocked, setUnlocked] = useState(false);
+  const outcomeLogged = useRef(false);
 
-  async function handleUnlock() {
-    setIsSubmitting(true);
+  async function logOutcome(event: "paywall_paid" | "paywall_rejected") {
+    if (outcomeLogged.current) return;
+    outcomeLogged.current = true;
+
     try {
       await fetch("/api/paywall", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ event: "unlock_click", sessionId }),
+        body: JSON.stringify({ event, sessionId }),
       });
     } catch {
       // Fake paywall — still unlock locally if API fails
+    }
+  }
+
+  function handleClose() {
+    if (!unlocked) {
+      void logOutcome("paywall_rejected");
+    }
+    onClose();
+  }
+
+  async function handleUnlock() {
+    setIsSubmitting(true);
+    try {
+      await logOutcome("paywall_paid");
     } finally {
       setIsSubmitting(false);
       setUnlocked(true);
@@ -35,14 +52,14 @@ export default function PaywallModal({
   return (
     <div
       className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
-      onClick={onClose}
+      onClick={handleClose}
     >
       <div
         className="relative bg-background rounded-2xl shadow-2xl max-w-md w-full p-8"
         onClick={(e) => e.stopPropagation()}
       >
         <button
-          onClick={onClose}
+          onClick={handleClose}
           aria-label="Close"
           className="absolute top-4 right-4 text-muted-foreground hover:text-foreground transition-colors"
         >
@@ -59,7 +76,7 @@ export default function PaywallModal({
               the rest of the listings for this session.
             </p>
             <button
-              onClick={onClose}
+              onClick={handleClose}
               className="w-full py-2.5 rounded-xl text-sm font-semibold bg-foreground text-background hover:bg-foreground/90 transition-colors"
             >
               Keep browsing
@@ -88,7 +105,7 @@ export default function PaywallModal({
               {isSubmitting ? "…" : "Unlock for $9.99"}
             </button>
             <button
-              onClick={onClose}
+              onClick={handleClose}
               className="w-full py-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
             >
               Not now

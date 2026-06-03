@@ -321,21 +321,9 @@ export default function Home() {
   const [missingFilterOpen, setMissingFilterOpen] = useState(false);
   const sessionId = useMemo(() => getSessionId(), []);
 
-  const logPaywallEvent = useCallback(
-    (event: "paywall_shown" | "dismiss") => {
-      void fetch("/api/paywall", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ event, sessionId }),
-      }).catch(() => {});
-    },
-    [sessionId]
-  );
-
   const openPaywall = useCallback(() => {
     setShowPaywall(true);
-    logPaywallEvent("paywall_shown");
-  }, [logPaywallEvent]);
+  }, []);
 
   const handleListingClick = useCallback(
     (listing: Pick<StaticListing, "airbnbUrl">) => {
@@ -356,8 +344,7 @@ export default function Home() {
 
   const handlePaywallClose = useCallback(() => {
     setShowPaywall(false);
-    logPaywallEvent("dismiss");
-  }, [logPaywallEvent]);
+  }, []);
   const [hoveredId, setHoveredId] = useState<number | null>(null);
   const [mapBounds, setMapBounds] = useState<{
     north: number;
