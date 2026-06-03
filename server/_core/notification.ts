@@ -31,7 +31,7 @@ function validatePayload(input: NotificationPayload): NotificationPayload {
 }
 
 /**
- * Notify the product owner about survey, filter, or contact submissions.
+ * Notify the product owner about survey, filter, contact, or paywall events.
  * Uses Resend when configured; otherwise logs and returns success so UX isn't blocked.
  */
 export async function notifyOwner(
