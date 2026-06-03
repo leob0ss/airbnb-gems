@@ -126,9 +126,9 @@ function ContactModal({ onClose }: { onClose: () => void }) {
   const [message, setMessage] = useState("");
   const [email, setEmail] = useState("");
   const [emailError, setEmailError] = useState("");
+  const [submitError, setSubmitError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [step, setStep] = useState<"form" | "thanks">("form");
-
-  const submit = trpc.contact.submit.useMutation();
 
   function validateEmail(val: string) {
     if (!val) return "";
@@ -140,8 +140,33 @@ function ContactModal({ onClose }: { onClose: () => void }) {
     if (!message.trim()) return;
     const err = validateEmail(email);
     if (err) { setEmailError(err); return; }
-    await submit.mutateAsync({ message: message.trim(), email: email.trim() || null });
-    setStep("thanks");
+
+    setIsSubmitting(true);
+    setSubmitError("");
+
+    try {
+      const response = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message: message.trim(),
+          email: email.trim() || null,
+        }),
+      });
+
+      const data = (await response.json()) as { success?: boolean; error?: string };
+
+      if (!response.ok || !data.success) {
+        setSubmitError(data.error ?? "Something went wrong. Please try again.");
+        return;
+      }
+
+      setStep("thanks");
+    } catch {
+      setSubmitError("Something went wrong. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
@@ -195,12 +220,13 @@ function ContactModal({ onClose }: { onClose: () => void }) {
                 />
                 {emailError && <p className="text-xs text-red-500">{emailError}</p>}
               </div>
+              {submitError && <p className="text-xs text-red-500">{submitError}</p>}
               <button
                 type="submit"
-                disabled={!message.trim() || submit.isPending}
+                disabled={!message.trim() || isSubmitting}
                 className="w-full py-2.5 rounded-xl text-sm font-semibold bg-foreground text-background hover:bg-foreground/90 disabled:opacity-40 transition-colors"
               >
-                {submit.isPending ? "Sending…" : "Send message"}
+                {isSubmitting ? "Sending…" : "Send message"}
               </button>
             </form>
           </>

@@ -3,6 +3,7 @@ import express from "express";
 import { createServer } from "http";
 import net from "net";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
+import { handleContactRequest } from "../contact/http";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { setupVite, serveStatic } from "./vite";
@@ -38,6 +39,18 @@ async function startServer() {
       createContext,
     })
   );
+
+  app.post("/api/contact", async (req, res) => {
+    const response = await handleContactRequest(
+      new Request(`${req.protocol}://${req.get("host")}/api/contact`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(req.body),
+      })
+    );
+    const data = await response.json();
+    res.status(response.status).json(data);
+  });
 
   if (process.env.NODE_ENV === "development") {
     await setupVite(app, server);
