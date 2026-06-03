@@ -1,0 +1,19 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+.vercel/
+
+# Environment (never commit secrets)
+.env
+.env.local
+.env.*.local
+
+# Logs and OS
+*.log
+.DS_Store
+.manus-logs/
+
+# Local database
+mysql_data/
