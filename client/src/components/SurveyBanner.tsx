@@ -5,10 +5,9 @@
  *   Step 1: "Did you find what you were looking for?" → Yes / Not yet / Dismiss
  *            → Answer is submitted to DB immediately on button click
  *   Step 2: Contextual free-text follow-up (optional — user can skip)
- *            → If submitted, a second mutation updates with the follow-up text
+ *            → If submitted, a second POST updates with the follow-up text
  *   Step 3: Thank-you message, then auto-dismiss after 3s
  */
-import { trpc } from "@/lib/trpc";
 import { X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
@@ -30,9 +29,26 @@ export default function SurveyBanner({
   const [step, setStep] = useState<Step>("question");
   const [answer, setAnswer] = useState<"yes" | "no" | null>(null);
   const [followupText, setFollowupText] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const submitSurvey = trpc.surveys.submit.useMutation();
+  async function postSurvey(payload: {
+    answer: "yes" | "no";
+    followup: string | null;
+    sessionId: string;
+    activeCategory: string;
+    activeState: string | null;
+  }) {
+    const response = await fetch("/api/survey", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    const data = (await response.json()) as { success?: boolean };
+    if (!response.ok || !data.success) {
+      throw new Error("Survey submit failed");
+    }
+  }
 
   // Auto-focus the input when we reach the follow-up step
   useEffect(() => {
@@ -52,31 +68,36 @@ export default function SurveyBanner({
   // Submit the answer immediately when Yes/Not yet is clicked
   async function handleAnswer(a: "yes" | "no") {
     setAnswer(a);
-    // Fire-and-forget: record the answer right away, no follow-up yet
-    submitSurvey.mutate({
+    void postSurvey({
       answer: a,
       followup: null,
       sessionId,
       activeCategory,
       activeState,
-    });
+    }).catch(() => {});
     setStep("followup");
   }
 
-  // Submit the follow-up text as a second response entry
   async function handleSubmitFollowup() {
     if (!followupText.trim()) {
       setStep("thanks");
       return;
     }
-    await submitSurvey.mutateAsync({
-      answer: answer!,
-      followup: followupText.trim(),
-      sessionId,
-      activeCategory,
-      activeState,
-    });
-    setStep("thanks");
+    setIsSubmitting(true);
+    try {
+      await postSurvey({
+        answer: answer!,
+        followup: followupText.trim(),
+        sessionId,
+        activeCategory,
+        activeState,
+      });
+      setStep("thanks");
+    } catch {
+      setStep("thanks");
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   function handleSkip() {
@@ -150,10 +171,10 @@ export default function SurveyBanner({
               />
               <button
                 onClick={handleSubmitFollowup}
-                disabled={submitSurvey.isPending}
+                disabled={isSubmitting}
                 className="px-4 py-2 rounded-xl text-sm font-semibold bg-background text-foreground hover:bg-background/90 disabled:opacity-50 transition-colors"
               >
-                {submitSurvey.isPending ? "…" : "Send"}
+                {isSubmitting ? "…" : "Send"}
               </button>
             </div>
             <button

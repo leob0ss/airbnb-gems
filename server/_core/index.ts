@@ -4,6 +4,8 @@ import { createServer } from "http";
 import net from "net";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { handleContactRequest } from "../contact/http";
+import { handleFilterRequestRequest } from "../filterRequest/http";
+import { handleSurveyRequest } from "../survey/http";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { setupVite, serveStatic } from "./vite";
@@ -43,6 +45,30 @@ async function startServer() {
   app.post("/api/contact", async (req, res) => {
     const response = await handleContactRequest(
       new Request(`${req.protocol}://${req.get("host")}/api/contact`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(req.body),
+      })
+    );
+    const data = await response.json();
+    res.status(response.status).json(data);
+  });
+
+  app.post("/api/filter-request", async (req, res) => {
+    const response = await handleFilterRequestRequest(
+      new Request(`${req.protocol}://${req.get("host")}/api/filter-request`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(req.body),
+      })
+    );
+    const data = await response.json();
+    res.status(response.status).json(data);
+  });
+
+  app.post("/api/survey", async (req, res) => {
+    const response = await handleSurveyRequest(
+      new Request(`${req.protocol}://${req.get("host")}/api/survey`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(req.body),

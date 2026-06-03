@@ -12,6 +12,12 @@
   "functions": {
     "api/contact.ts": {
       "includeFiles": "server/contact/**,server/_core/env.ts,server/_core/notification.ts"
+    },
+    "api/filter-request.ts": {
+      "includeFiles": "server/filterRequest/**,server/_core/env.ts,server/_core/notification.ts"
+    },
+    "api/survey.ts": {
+      "includeFiles": "server/survey/**,server/_core/env.ts,server/_core/notification.ts"
     }
   }
 }

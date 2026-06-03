@@ -5,9 +5,8 @@
  *   1. "What are you looking for?" (required, free text)
  *   2. "Email" (optional — clearly labelled as such)
  *
- * On submit: saves to DB via filterRequests.submit and notifies the owner.
+ * On submit: saves to DB via /api/filter-request and notifies the owner.
  */
-import { trpc } from "@/lib/trpc";
 import { X } from "lucide-react";
 import { useRef, useState } from "react";
 
@@ -26,9 +25,9 @@ export default function MissingFilterModal({
   const [whatLookingFor, setWhatLookingFor] = useState("");
   const [email, setEmail] = useState("");
   const [emailError, setEmailError] = useState("");
+  const [submitError, setSubmitError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
-
-  const submitRequest = trpc.filterRequests.submit.useMutation();
 
   function validateEmail(val: string) {
     if (!val) return ""; // optional
@@ -47,13 +46,33 @@ export default function MissingFilterModal({
       return;
     }
 
-    await submitRequest.mutateAsync({
-      whatLookingFor: whatLookingFor.trim(),
-      email: email.trim() || null,
-      sessionId,
-    });
+    setIsSubmitting(true);
+    setSubmitError("");
 
-    setStep("thanks");
+    try {
+      const response = await fetch("/api/filter-request", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          whatLookingFor: whatLookingFor.trim(),
+          email: email.trim() || null,
+          sessionId,
+        }),
+      });
+
+      const data = (await response.json()) as { success?: boolean; error?: string };
+
+      if (!response.ok || !data.success) {
+        setSubmitError(data.error ?? "Something went wrong. Please try again.");
+        return;
+      }
+
+      setStep("thanks");
+    } catch {
+      setSubmitError("Something went wrong. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
@@ -133,12 +152,13 @@ export default function MissingFilterModal({
               )}
             </div>
 
+            {submitError && <p className="text-xs text-red-400">{submitError}</p>}
             <button
               type="submit"
-              disabled={!whatLookingFor.trim() || submitRequest.isPending}
+              disabled={!whatLookingFor.trim() || isSubmitting}
               className="w-full py-2.5 rounded-xl text-sm font-semibold bg-background text-foreground hover:bg-background/90 disabled:opacity-40 transition-colors"
             >
-              {submitRequest.isPending ? "Sending…" : "Send"}
+              {isSubmitting ? "Sending…" : "Send"}
             </button>
           </form>
         )}
