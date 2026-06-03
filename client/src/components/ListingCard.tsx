@@ -6,7 +6,9 @@ interface ListingCardProps {
   listing: StaticListing;
   activeFilter?: string;
   sessionId?: string;
-  /** Called after the user opens the Airbnb listing */
+  /** Called instead of default Airbnb open when provided */
+  onListingClick?: (listing: StaticListing) => void;
+  /** Called after a listing successfully opens Airbnb */
   onTrackedClick?: () => void;
 }
 
@@ -45,6 +47,7 @@ function formatRating(rating: number): string {
 
 export default function ListingCard({
   listing,
+  onListingClick,
   onTrackedClick,
 }: ListingCardProps) {
   const imageUrl = listing.imageUrl || getPlaceholder(listing.id);
@@ -55,9 +58,13 @@ export default function ListingCard({
   );
 
   const handleClick = useCallback(() => {
+    if (onListingClick) {
+      onListingClick(listing);
+      return;
+    }
     window.open(listing.airbnbUrl, "_blank", "noopener,noreferrer");
     onTrackedClick?.();
-  }, [listing.airbnbUrl, onTrackedClick]);
+  }, [listing, onListingClick, onTrackedClick]);
 
   return (
     <article

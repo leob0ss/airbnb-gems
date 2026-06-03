@@ -3,8 +3,15 @@ import ListingCard from "@/components/ListingCard";
 import ListingCardSkeleton from "@/components/ListingCardSkeleton";
 import ListingsMap from "@/components/ListingsMap";
 import MissingFilterModal from "@/components/MissingFilterModal";
+import PaywallModal from "@/components/PaywallModal";
 import SurveyBanner from "@/components/SurveyBanner";
 import { useListings } from "@/hooks/useListings";
+import {
+  incrementListingClickCount,
+  markPaywallUnlocked,
+  shouldShowPaywall,
+} from "@/lib/listingAccess";
+import type { StaticListing } from "@/lib/listingsData";
 import {
   ChevronLeft,
   ChevronRight,
@@ -312,18 +319,49 @@ export default function Home() {
   const [page, setPage] = useState(1);
   const [showMap, setShowMap] = useState(false);
   const [showContact, setShowContact] = useState(false);
-  const [clickCount, setClickCount] = useState(0);
   const [showSurvey, setShowSurvey] = useState(false);
+  const [showPaywall, setShowPaywall] = useState(false);
   const [missingFilterOpen, setMissingFilterOpen] = useState(false);
+  const sessionId = useMemo(() => getSessionId(), []);
 
-  // Show survey after the 2nd Airbnb click (only once per session)
-  const handleTrackedClick = useCallback(() => {
-    setClickCount((prev) => {
-      const next = prev + 1;
+  const logPaywallEvent = useCallback(
+    (event: "paywall_shown" | "dismiss") => {
+      void fetch("/api/paywall", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ event, sessionId }),
+      }).catch(() => {});
+    },
+    [sessionId]
+  );
+
+  const openPaywall = useCallback(() => {
+    setShowPaywall(true);
+    logPaywallEvent("paywall_shown");
+  }, [logPaywallEvent]);
+
+  const handleListingClick = useCallback(
+    (listing: Pick<StaticListing, "airbnbUrl">) => {
+      if (shouldShowPaywall()) {
+        openPaywall();
+        return;
+      }
+
+      window.open(listing.airbnbUrl, "_blank", "noopener,noreferrer");
+      const next = incrementListingClickCount();
       if (next === 2) setShowSurvey(true);
-      return next;
-    });
+    },
+    [openPaywall]
+  );
+
+  const handlePaywallUnlock = useCallback(() => {
+    markPaywallUnlocked();
   }, []);
+
+  const handlePaywallClose = useCallback(() => {
+    setShowPaywall(false);
+    logPaywallEvent("dismiss");
+  }, [logPaywallEvent]);
   const [hoveredId, setHoveredId] = useState<number | null>(null);
   const [mapBounds, setMapBounds] = useState<{
     north: number;
@@ -331,17 +369,14 @@ export default function Home() {
     east: number;
     west: number;
   } | null>(null);
+  const gridRef = useRef<HTMLDivElement>(null);
+  const heroRef = useRef<HTMLElement>(null);
+  const [filterSticky, setFilterSticky] = useState(false);
 
-  // Reset bounds whenever map view is toggled
   const handleToggleMap = (next: boolean) => {
     if (!next) setMapBounds(null);
     setShowMap(next);
   };
-
-  const sessionId = useMemo(() => getSessionId(), []);
-  const gridRef = useRef<HTMLDivElement>(null);
-  const heroRef = useRef<HTMLElement>(null);
-  const [filterSticky, setFilterSticky] = useState(false);
 
   // Make filter bar sticky only after the hero scrolls out of view
   useEffect(() => {
@@ -593,6 +628,7 @@ export default function Home() {
                           listing={listing}
                           activeFilter={activeFilterLabel}
                           sessionId={sessionId}
+                          onListingClick={handleListingClick}
                         />
                       </div>
                     ))}
@@ -616,6 +652,7 @@ export default function Home() {
                 hoveredId={hoveredId}
                 onHover={setHoveredId}
                 onBoundsChange={setMapBounds}
+                onListingClick={handleListingClick}
               />
             </div>
           </div>
@@ -751,7 +788,7 @@ export default function Home() {
                         listing={listing}
                         activeFilter={activeFilterLabel}
                         sessionId={sessionId}
-                        onTrackedClick={handleTrackedClick}
+                        onListingClick={handleListingClick}
                       />
                     </div>
                   ))}
@@ -823,6 +860,14 @@ export default function Home() {
         <MissingFilterModal
           sessionId={sessionId}
           onClose={() => setMissingFilterOpen(false)}
+        />
+      )}
+
+      {showPaywall && (
+        <PaywallModal
+          sessionId={sessionId}
+          onClose={handlePaywallClose}
+          onUnlock={handlePaywallUnlock}
         />
       )}
     </div>

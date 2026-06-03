@@ -36,6 +36,7 @@ interface ListingsMapProps {
   hoveredId?: number | null;
   onHover?: (id: number | null) => void;
   onBoundsChange?: (bounds: MapBounds) => void;
+  onListingClick?: (listing: Listing) => void;
 }
 
 const PLACEHOLDER =
@@ -95,6 +96,7 @@ export default function ListingsMap({
   hoveredId,
   onHover,
   onBoundsChange,
+  onListingClick,
 }: ListingsMapProps) {
   const onBoundsChangeRef = useRef(onBoundsChange);
   useEffect(() => {
@@ -338,16 +340,14 @@ export default function ListingsMap({
                 </div>
               ) : null}
             </div>
-            <a
-              href={selectedListing.airbnbUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={(e) => e.stopPropagation()}
+            <button
+              type="button"
+              onClick={() => onListingClick?.(selectedListing)}
               className="mt-3 flex items-center justify-center gap-1.5 w-full text-xs font-medium bg-foreground text-background rounded-lg py-2 hover:bg-foreground/90 transition-colors"
             >
               View on Airbnb
               <ExternalLink className="w-3 h-3" />
-            </a>
+            </button>
           </div>
         </div>
       )}

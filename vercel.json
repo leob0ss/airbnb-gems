@@ -18,6 +18,9 @@
     },
     "api/survey.ts": {
       "includeFiles": "server/survey/**,server/_core/env.ts,server/_core/notification.ts"
+    },
+    "api/paywall.ts": {
+      "includeFiles": "server/paywall/**,server/_core/env.ts"
     }
   }
 }
