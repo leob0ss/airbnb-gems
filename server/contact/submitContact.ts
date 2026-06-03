@@ -1,5 +1,5 @@
-import { insertContactSubmission, isContactDbConfigured } from "./db";
-import { notifyOwner } from "../_core/notification";
+import { insertContactSubmission, isContactDbConfigured } from "./db.js";
+import { notifyOwner } from "../_core/notification.js";
 
 export interface ContactSubmitInput {
   message: string;

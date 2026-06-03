@@ -1,4 +1,4 @@
-import { submitContact } from "./submitContact";
+import { submitContact } from "./submitContact.js";
 
 export async function handleContactRequest(request: Request): Promise<Response> {
   if (request.method !== "POST") {

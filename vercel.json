@@ -8,5 +8,10 @@
       "source": "/((?!api/).*)",
       "destination": "/index.html"
     }
-  ]
+  ],
+  "functions": {
+    "api/contact.ts": {
+      "includeFiles": "server/contact/**,server/_core/env.ts,server/_core/notification.ts"
+    }
+  }
 }
