@@ -140,6 +140,44 @@ function CategoryTabs({
   );
 }
 
+function CategoryFilterBar({
+  activeCategory,
+  onListingCategoryChange,
+  onOtherClick,
+  filters,
+  availableStates,
+  onFilterChange,
+}: {
+  activeCategory: ListingCategoryId;
+  onListingCategoryChange: (id: ListingCategoryId) => void;
+  onOtherClick: () => void;
+  filters: ActiveFilters;
+  availableStates: string[];
+  onFilterChange: (filters: ActiveFilters) => void;
+}) {
+  return (
+    <div className="@container/filter-bar">
+      <div className="flex flex-col @[720px]:flex-row @[720px]:items-center @[720px]:py-4">
+        <div className="flex min-w-0 items-center gap-2 overflow-x-auto scrollbar-none py-4 @[720px]:flex-1 @[720px]:py-0">
+          <CategoryTabs
+            activeCategory={activeCategory}
+            onListingCategoryChange={onListingCategoryChange}
+            onOtherClick={onOtherClick}
+          />
+        </div>
+        <div className="border-t border-border py-3 -mx-6 px-6 sm:-mx-10 sm:px-10 @[720px]:mx-0 @[720px]:border-t-0 @[720px]:px-0 @[720px]:py-0 @[720px]:ml-auto @[720px]:flex-shrink-0">
+          <FilterBar
+            filters={filters}
+            availableStates={availableStates}
+            onFilterChange={onFilterChange}
+            inline
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function Pagination({
   page,
   totalPages,
@@ -608,23 +646,14 @@ export default function Home() {
           {/* ── Category tabs + filter bar (map view) ── */}
           <div className="border-b border-border bg-background flex-shrink-0 z-30">
             <div className="max-w-[1760px] mx-auto px-6 sm:px-10">
-              <div className="flex items-center gap-2 py-4">
-                <div className="flex items-center gap-2 overflow-x-auto scrollbar-none flex-1 min-w-0">
-                  <CategoryTabs
-                    activeCategory={activeCategory}
-                    onListingCategoryChange={setActiveCategory}
-                    onOtherClick={() => setMissingFilterOpen(true)}
-                  />
-                </div>
-                <div className="flex-shrink-0">
-                  <FilterBar
-                    filters={filters}
-                    availableStates={availableStates}
-                    onFilterChange={setFilters}
-                    inline
-                  />
-                </div>
-              </div>
+              <CategoryFilterBar
+                activeCategory={activeCategory}
+                onListingCategoryChange={setActiveCategory}
+                onOtherClick={() => setMissingFilterOpen(true)}
+                filters={filters}
+                availableStates={availableStates}
+                onFilterChange={setFilters}
+              />
             </div>
           </div>
 
@@ -726,23 +755,14 @@ export default function Home() {
             }`}
           >
             <div className="max-w-[1760px] mx-auto px-6 sm:px-10">
-              <div className="flex items-center gap-2 py-4">
-                <div className="flex items-center gap-2 overflow-x-auto scrollbar-none flex-1 min-w-0">
-                  <CategoryTabs
-                    activeCategory={activeCategory}
-                    onListingCategoryChange={setActiveCategory}
-                    onOtherClick={() => setMissingFilterOpen(true)}
-                  />
-                </div>
-                <div className="flex-shrink-0">
-                  <FilterBar
-                    filters={filters}
-                    availableStates={availableStates}
-                    onFilterChange={setFilters}
-                    inline
-                  />
-                </div>
-              </div>
+              <CategoryFilterBar
+                activeCategory={activeCategory}
+                onListingCategoryChange={setActiveCategory}
+                onOtherClick={() => setMissingFilterOpen(true)}
+                filters={filters}
+                availableStates={availableStates}
+                onFilterChange={setFilters}
+              />
             </div>
           </div>
 
