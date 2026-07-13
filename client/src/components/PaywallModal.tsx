@@ -10,7 +10,7 @@ interface PaywallModalProps {
 const BENEFITS = [
   {
     title: "Unlock 20+ filters",
-    detail: "Cabin, Cave, Lake house, Farm, Boat, and more",
+    detail: "Cabin, cave, farm, boat... all original Airbnb filters",
   },
   {
     title: "2,000+ hand-picked stays",
