@@ -1,4 +1,4 @@
-export const FREE_LISTING_CLICKS = 4;
+export const FREE_LISTING_CLICKS = 8;
 
 const CLICKS_KEY = "ag_listing_clicks";
 const UNLOCKED_KEY = "ag_paywall_unlocked";
