@@ -1,5 +1,6 @@
 import { neon } from "@neondatabase/serverless";
 import { migrateSubmittedAtToPacific } from "../_core/pacificTime.js";
+import { migrateSessionIdToVisitorId } from "../_core/migrateVisitorId.js";
 
 let schemaReady: Promise<void> | null = null;
 
@@ -25,13 +26,14 @@ async function ensureSchemaOnce(): Promise<void> {
           id SERIAL PRIMARY KEY,
           answer VARCHAR(3) NOT NULL CHECK (answer IN ('yes', 'no')),
           followup TEXT,
-          session_id VARCHAR(64),
+          visitor_id VARCHAR(64),
           active_category VARCHAR(64),
           active_state VARCHAR(128),
           submitted_at TIMESTAMP NOT NULL DEFAULT (NOW() AT TIME ZONE 'America/Los_Angeles')
         )
       `;
       await migrateSubmittedAtToPacific(sql, "survey_responses");
+      await migrateSessionIdToVisitorId(sql, "survey_responses");
       await sql`
         CREATE INDEX IF NOT EXISTS idx_survey_answer
         ON survey_responses (answer)
@@ -39,6 +41,10 @@ async function ensureSchemaOnce(): Promise<void> {
       await sql`
         CREATE INDEX IF NOT EXISTS idx_survey_time
         ON survey_responses (submitted_at DESC)
+      `;
+      await sql`
+        CREATE INDEX IF NOT EXISTS idx_survey_visitor
+        ON survey_responses (visitor_id)
       `;
     })();
   }
@@ -49,7 +55,7 @@ async function ensureSchemaOnce(): Promise<void> {
 export async function insertSurveyResponse(
   answer: "yes" | "no",
   followup: string | null,
-  sessionId: string | null,
+  visitorId: string | null,
   activeCategory: string | null,
   activeState: string | null,
 ): Promise<number> {
@@ -62,8 +68,8 @@ export async function insertSurveyResponse(
   await ensureSchemaOnce();
 
   const rows = await sql`
-    INSERT INTO survey_responses (answer, followup, session_id, active_category, active_state)
-    VALUES (${answer}, ${followup}, ${sessionId}, ${activeCategory}, ${activeState})
+    INSERT INTO survey_responses (answer, followup, visitor_id, active_category, active_state)
+    VALUES (${answer}, ${followup}, ${visitorId}, ${activeCategory}, ${activeState})
     RETURNING id
   `;
 

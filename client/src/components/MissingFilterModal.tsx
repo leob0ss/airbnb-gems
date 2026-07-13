@@ -11,14 +11,14 @@ import { X } from "lucide-react";
 import { useRef, useState } from "react";
 
 interface MissingFilterModalProps {
-  sessionId: string;
+  visitorId: string;
   onClose: () => void;
 }
 
 type Step = "form" | "thanks";
 
 export default function MissingFilterModal({
-  sessionId,
+  visitorId,
   onClose,
 }: MissingFilterModalProps) {
   const [step, setStep] = useState<Step>("form");
@@ -56,7 +56,7 @@ export default function MissingFilterModal({
         body: JSON.stringify({
           whatLookingFor: whatLookingFor.trim(),
           email: email.trim() || null,
-          sessionId,
+          visitorId,
         }),
       });
 

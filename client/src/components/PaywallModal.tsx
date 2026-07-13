@@ -2,7 +2,7 @@ import { Check, X } from "lucide-react";
 import { useRef, useState } from "react";
 
 interface PaywallModalProps {
-  sessionId: string;
+  visitorId: string;
   onClose: () => void;
   onUnlock: () => void;
 }
@@ -27,7 +27,7 @@ const BENEFITS = [
 ] as const;
 
 export default function PaywallModal({
-  sessionId,
+  visitorId,
   onClose,
   onUnlock,
 }: PaywallModalProps) {
@@ -43,7 +43,7 @@ export default function PaywallModal({
       await fetch("/api/paywall", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ event, sessionId }),
+        body: JSON.stringify({ event, visitorId }),
       });
     } catch {
       // Fake paywall — still unlock locally if API fails

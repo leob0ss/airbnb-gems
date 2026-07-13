@@ -4,7 +4,7 @@ import { notifyOwner } from "../_core/notification.js";
 export interface FilterRequestSubmitInput {
   whatLookingFor: string;
   email?: string | null;
-  sessionId?: string | null;
+  visitorId?: string | null;
 }
 
 export type FilterRequestSubmitResult =
@@ -22,7 +22,7 @@ export function parseFilterRequestInput(
     return { success: false, error: "Invalid request body." };
   }
 
-  const { whatLookingFor, email, sessionId } = body as Record<string, unknown>;
+  const { whatLookingFor, email, visitorId } = body as Record<string, unknown>;
 
   if (typeof whatLookingFor !== "string" || !whatLookingFor.trim()) {
     return {
@@ -46,18 +46,18 @@ export function parseFilterRequestInput(
     normalizedEmail = email.trim();
   }
 
-  let normalizedSessionId: string | null = null;
-  if (sessionId != null && sessionId !== "") {
-    if (typeof sessionId !== "string" || sessionId.length > 64) {
-      return { success: false, error: "Invalid session." };
+  let normalizedVisitorId: string | null = null;
+  if (visitorId != null && visitorId !== "") {
+    if (typeof visitorId !== "string" || visitorId.length > 64) {
+      return { success: false, error: "Invalid visitor." };
     }
-    normalizedSessionId = sessionId;
+    normalizedVisitorId = visitorId;
   }
 
   return {
     whatLookingFor: whatLookingFor.trim(),
     email: normalizedEmail,
-    sessionId: normalizedSessionId,
+    visitorId: normalizedVisitorId,
   };
 }
 
@@ -77,13 +77,16 @@ export async function submitFilterRequest(
   const id = await insertFilterRequest(
     parsed.whatLookingFor,
     parsed.email ?? null,
-    parsed.sessionId ?? null,
+    parsed.visitorId ?? null,
   );
 
   const emailLine = parsed.email ? `\n\nEmail: ${parsed.email}` : "";
+  const visitorLine = parsed.visitorId
+    ? `\nVisitor: ${parsed.visitorId}`
+    : "";
   await notifyOwner({
     title: `Filter Request: "${parsed.whatLookingFor.slice(0, 60)}"`,
-    content: `Looking for: "${parsed.whatLookingFor}"${emailLine}`,
+    content: `Looking for: "${parsed.whatLookingFor}"${emailLine}${visitorLine}`,
   });
 
   return { success: true, id };

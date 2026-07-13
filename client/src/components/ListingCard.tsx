@@ -5,7 +5,6 @@ import type { StaticListing } from "@/lib/listingsData";
 interface ListingCardProps {
   listing: StaticListing;
   activeFilter?: string;
-  sessionId?: string;
   /** Called instead of default Airbnb open when provided */
   onListingClick?: (listing: StaticListing) => void;
   /** Called after a listing successfully opens Airbnb */

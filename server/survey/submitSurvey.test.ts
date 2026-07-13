@@ -6,14 +6,14 @@ describe("parseSurveyInput", () => {
     const result = parseSurveyInput({
       answer: "yes",
       followup: "I was looking for treehouses in New York",
-      sessionId: "test-session-123",
+      visitorId: "test-visitor-123",
       activeCategory: "Treehouse",
       activeState: "New York",
     });
     expect(result).toEqual({
       answer: "yes",
       followup: "I was looking for treehouses in New York",
-      sessionId: "test-session-123",
+      visitorId: "test-visitor-123",
       activeCategory: "Treehouse",
       activeState: "New York",
     });
@@ -23,14 +23,14 @@ describe("parseSurveyInput", () => {
     const result = parseSurveyInput({
       answer: "no",
       followup: null,
-      sessionId: "test-session-456",
+      visitorId: "test-visitor-456",
       activeCategory: "A-Frame",
       activeState: null,
     });
     expect(result).toEqual({
       answer: "no",
       followup: null,
-      sessionId: "test-session-456",
+      visitorId: "test-visitor-456",
       activeCategory: "A-Frame",
       activeState: null,
     });
