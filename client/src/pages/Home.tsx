@@ -7,6 +7,7 @@ import PaywallModal from "@/components/PaywallModal";
 import { useListings } from "@/hooks/useListings";
 import {
   incrementListingClickCount,
+  isPaywallUnlocked,
   markPaywallUnlocked,
   shouldShowPaywall,
 } from "@/lib/listingAccess";
@@ -409,15 +410,28 @@ export default function Home() {
   const [showContact, setShowContact] = useState(false);
   const [showPaywall, setShowPaywall] = useState(false);
   const [missingFilterOpen, setMissingFilterOpen] = useState(false);
+  const [pendingAfterUnlock, setPendingAfterUnlock] = useState<
+    "missingFilter" | null
+  >(null);
   const sessionId = useMemo(() => getSessionId(), []);
 
   const openPaywall = useCallback(() => {
     setShowPaywall(true);
   }, []);
 
+  const handleOtherClick = useCallback(() => {
+    if (isPaywallUnlocked()) {
+      setMissingFilterOpen(true);
+      return;
+    }
+    setPendingAfterUnlock("missingFilter");
+    setShowPaywall(true);
+  }, []);
+
   const handleListingClick = useCallback(
     (listing: Pick<StaticListing, "airbnbUrl">) => {
       if (shouldShowPaywall()) {
+        setPendingAfterUnlock(null);
         openPaywall();
         return;
       }
@@ -433,8 +447,14 @@ export default function Home() {
   }, []);
 
   const handlePaywallClose = useCallback(() => {
+    const openMissingFilter =
+      isPaywallUnlocked() && pendingAfterUnlock === "missingFilter";
     setShowPaywall(false);
-  }, []);
+    setPendingAfterUnlock(null);
+    if (openMissingFilter) {
+      setMissingFilterOpen(true);
+    }
+  }, [pendingAfterUnlock]);
   const [hoveredId, setHoveredId] = useState<number | null>(null);
   const [mapBounds, setMapBounds] = useState<{
     north: number;
@@ -649,7 +669,7 @@ export default function Home() {
               <CategoryFilterBar
                 activeCategory={activeCategory}
                 onListingCategoryChange={setActiveCategory}
-                onOtherClick={() => setMissingFilterOpen(true)}
+                onOtherClick={handleOtherClick}
                 filters={filters}
                 availableStates={availableStates}
                 onFilterChange={setFilters}
@@ -758,7 +778,7 @@ export default function Home() {
               <CategoryFilterBar
                 activeCategory={activeCategory}
                 onListingCategoryChange={setActiveCategory}
-                onOtherClick={() => setMissingFilterOpen(true)}
+                onOtherClick={handleOtherClick}
                 filters={filters}
                 availableStates={availableStates}
                 onFilterChange={setFilters}
