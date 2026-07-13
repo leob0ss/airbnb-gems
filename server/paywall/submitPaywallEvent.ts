@@ -19,26 +19,28 @@ const EVENT_NOTIFICATIONS: Record<
   },
 };
 
-export function parsePaywallInput(body: unknown): PaywallEventResult | { event: string; sessionId: string | null } {
+export function parsePaywallInput(
+  body: unknown
+): PaywallEventResult | { event: string; visitorId: string | null } {
   if (!body || typeof body !== "object") {
     return { success: false, error: "Invalid request body." };
   }
 
-  const { event, sessionId } = body as Record<string, unknown>;
+  const { event, visitorId } = body as Record<string, unknown>;
 
   if (typeof event !== "string" || !ALLOWED_EVENTS.has(event)) {
     return { success: false, error: "Invalid event." };
   }
 
-  let normalizedSessionId: string | null = null;
-  if (sessionId != null && sessionId !== "") {
-    if (typeof sessionId !== "string" || sessionId.length > 64) {
-      return { success: false, error: "Invalid session." };
+  let normalizedVisitorId: string | null = null;
+  if (visitorId != null && visitorId !== "") {
+    if (typeof visitorId !== "string" || visitorId.length > 64) {
+      return { success: false, error: "Invalid visitor." };
     }
-    normalizedSessionId = sessionId;
+    normalizedVisitorId = visitorId;
   }
 
-  return { event, sessionId: normalizedSessionId };
+  return { event, visitorId: normalizedVisitorId };
 }
 
 export async function submitPaywallEvent(body: unknown): Promise<PaywallEventResult> {
@@ -52,16 +54,16 @@ export async function submitPaywallEvent(body: unknown): Promise<PaywallEventRes
     };
   }
 
-  const id = await insertPaywallEvent(parsed.event, parsed.sessionId);
+  const id = await insertPaywallEvent(parsed.event, parsed.visitorId);
 
   if (parsed.event === "paywall_paid") {
     const notification = EVENT_NOTIFICATIONS[parsed.event];
-    const sessionLine = parsed.sessionId
-      ? `\n\nSession: ${parsed.sessionId}`
+    const visitorLine = parsed.visitorId
+      ? `\n\nVisitor: ${parsed.visitorId}`
       : "";
     await notifyOwner({
       title: notification.title,
-      content: `${notification.content}\n\nTime: ${formatPacificTimestamp()}${sessionLine}`,
+      content: `${notification.content}\n\nTime: ${formatPacificTimestamp()}${visitorLine}`,
     });
   }
 

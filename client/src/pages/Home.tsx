@@ -12,6 +12,7 @@ import {
   shouldShowPaywall,
 } from "@/lib/listingAccess";
 import type { StaticListing } from "@/lib/listingsData";
+import { getVisitorId } from "@/lib/visitorId";
 import {
   ChevronLeft,
   ChevronRight,
@@ -20,17 +21,6 @@ import {
   X,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-
-// Stable session ID for click tracking (no PII)
-function getSessionId(): string {
-  const key = "ds_session";
-  let id = sessionStorage.getItem(key);
-  if (!id) {
-    id = Math.random().toString(36).slice(2) + Date.now().toString(36);
-    sessionStorage.setItem(key, id);
-  }
-  return id;
-}
 
 const ITEMS_PER_PAGE = 24;
 
@@ -413,7 +403,7 @@ export default function Home() {
   const [pendingAfterUnlock, setPendingAfterUnlock] = useState<
     "missingFilter" | null
   >(null);
-  const sessionId = useMemo(() => getSessionId(), []);
+  const visitorId = useMemo(() => getVisitorId(), []);
 
   const openPaywall = useCallback(() => {
     setShowPaywall(true);
@@ -698,7 +688,6 @@ export default function Home() {
                         <ListingCard
                           listing={listing}
                           activeFilter={activeFilterLabel}
-                          sessionId={sessionId}
                           onListingClick={handleListingClick}
                         />
                       </div>
@@ -820,7 +809,6 @@ export default function Home() {
                       <ListingCard
                         listing={listing}
                         activeFilter={activeFilterLabel}
-                        sessionId={sessionId}
                         onListingClick={handleListingClick}
                       />
                     </div>
@@ -879,14 +867,14 @@ export default function Home() {
 
       {missingFilterOpen && (
         <MissingFilterModal
-          sessionId={sessionId}
+          visitorId={visitorId}
           onClose={() => setMissingFilterOpen(false)}
         />
       )}
 
       {showPaywall && (
         <PaywallModal
-          sessionId={sessionId}
+          visitorId={visitorId}
           onClose={handlePaywallClose}
           onUnlock={handlePaywallUnlock}
         />

@@ -1,5 +1,6 @@
 import { neon } from "@neondatabase/serverless";
 import { migrateSubmittedAtToPacific } from "../_core/pacificTime.js";
+import { migrateSessionIdToVisitorId } from "../_core/migrateVisitorId.js";
 
 let schemaReady: Promise<void> | null = null;
 
@@ -25,14 +26,19 @@ async function ensureSchemaOnce(): Promise<void> {
           id SERIAL PRIMARY KEY,
           what_looking_for TEXT NOT NULL,
           email VARCHAR(320),
-          session_id VARCHAR(64),
+          visitor_id VARCHAR(64),
           submitted_at TIMESTAMP NOT NULL DEFAULT (NOW() AT TIME ZONE 'America/Los_Angeles')
         )
       `;
       await migrateSubmittedAtToPacific(sql, "filter_requests");
+      await migrateSessionIdToVisitorId(sql, "filter_requests");
       await sql`
         CREATE INDEX IF NOT EXISTS idx_filter_requests_time
         ON filter_requests (submitted_at DESC)
+      `;
+      await sql`
+        CREATE INDEX IF NOT EXISTS idx_filter_requests_visitor
+        ON filter_requests (visitor_id)
       `;
     })();
   }
@@ -43,7 +49,7 @@ async function ensureSchemaOnce(): Promise<void> {
 export async function insertFilterRequest(
   whatLookingFor: string,
   email: string | null,
-  sessionId: string | null,
+  visitorId: string | null,
 ): Promise<number> {
   const url = getPostgresUrl();
   if (!url) {
@@ -54,8 +60,8 @@ export async function insertFilterRequest(
   await ensureSchemaOnce();
 
   const rows = await sql`
-    INSERT INTO filter_requests (what_looking_for, email, session_id)
-    VALUES (${whatLookingFor}, ${email}, ${sessionId})
+    INSERT INTO filter_requests (what_looking_for, email, visitor_id)
+    VALUES (${whatLookingFor}, ${email}, ${visitorId})
     RETURNING id
   `;
 

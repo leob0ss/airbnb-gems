@@ -2,25 +2,25 @@ import { describe, expect, it } from "vitest";
 import { parseFilterRequestInput } from "./submitFilterRequest";
 
 describe("parseFilterRequestInput", () => {
-  it("accepts request with optional email and session", () => {
+  it("accepts request with optional email and visitor", () => {
     const result = parseFilterRequestInput({
       whatLookingFor: "Yurts in Colorado",
       email: "user@example.com",
-      sessionId: "sess_abc",
+      visitorId: "vis_abc",
     });
     expect(result).toEqual({
       whatLookingFor: "Yurts in Colorado",
       email: "user@example.com",
-      sessionId: "sess_abc",
+      visitorId: "vis_abc",
     });
   });
 
-  it("accepts request without email or session", () => {
+  it("accepts request without email or visitor", () => {
     const result = parseFilterRequestInput({ whatLookingFor: "Cave houses" });
     expect(result).toEqual({
       whatLookingFor: "Cave houses",
       email: null,
-      sessionId: null,
+      visitorId: null,
     });
   });
 

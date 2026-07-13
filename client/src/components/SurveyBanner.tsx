@@ -12,7 +12,7 @@ import { X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 interface SurveyBannerProps {
-  sessionId: string;
+  visitorId: string;
   activeCategory: string;
   activeState: string | null;
   onDismiss: () => void;
@@ -21,7 +21,7 @@ interface SurveyBannerProps {
 type Step = "question" | "followup" | "thanks";
 
 export default function SurveyBanner({
-  sessionId,
+  visitorId,
   activeCategory,
   activeState,
   onDismiss,
@@ -43,7 +43,7 @@ export default function SurveyBanner({
       body: JSON.stringify({
         answer,
         followup,
-        sessionId,
+        visitorId,
         activeCategory,
         activeState,
       }),

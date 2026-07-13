@@ -1,5 +1,6 @@
 import { neon } from "@neondatabase/serverless";
 import { migrateSubmittedAtToPacific } from "../_core/pacificTime.js";
+import { migrateSessionIdToVisitorId } from "../_core/migrateVisitorId.js";
 
 let schemaReady: Promise<void> | null = null;
 
@@ -22,14 +23,19 @@ async function ensureSchemaOnce(): Promise<void> {
         CREATE TABLE IF NOT EXISTS paywall_events (
           id SERIAL PRIMARY KEY,
           event VARCHAR(32) NOT NULL,
-          session_id VARCHAR(64),
+          visitor_id VARCHAR(64),
           submitted_at TIMESTAMP NOT NULL DEFAULT (NOW() AT TIME ZONE 'America/Los_Angeles')
         )
       `;
       await migrateSubmittedAtToPacific(sql, "paywall_events");
+      await migrateSessionIdToVisitorId(sql, "paywall_events");
       await sql`
         CREATE INDEX IF NOT EXISTS idx_paywall_events_time
         ON paywall_events (submitted_at DESC)
+      `;
+      await sql`
+        CREATE INDEX IF NOT EXISTS idx_paywall_events_visitor
+        ON paywall_events (visitor_id)
       `;
     })();
   }
@@ -39,7 +45,7 @@ async function ensureSchemaOnce(): Promise<void> {
 
 export async function insertPaywallEvent(
   event: string,
-  sessionId: string | null
+  visitorId: string | null
 ): Promise<number> {
   const url = getPostgresUrl();
   if (!url) {
@@ -50,8 +56,8 @@ export async function insertPaywallEvent(
   await ensureSchemaOnce();
 
   const rows = await sql`
-    INSERT INTO paywall_events (event, session_id)
-    VALUES (${event}, ${sessionId})
+    INSERT INTO paywall_events (event, visitor_id)
+    VALUES (${event}, ${visitorId})
     RETURNING id
   `;
 

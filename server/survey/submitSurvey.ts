@@ -4,7 +4,7 @@ import { notifyOwner } from "../_core/notification.js";
 export interface SurveySubmitInput {
   answer: "yes" | "no";
   followup?: string | null;
-  sessionId?: string | null;
+  visitorId?: string | null;
   activeCategory?: string | null;
   activeState?: string | null;
 }
@@ -20,7 +20,7 @@ export function parseSurveyInput(
     return { success: false, error: "Invalid request body." };
   }
 
-  const { answer, followup, sessionId, activeCategory, activeState } =
+  const { answer, followup, visitorId, activeCategory, activeState } =
     body as Record<string, unknown>;
 
   if (answer !== "yes" && answer !== "no") {
@@ -41,12 +41,12 @@ export function parseSurveyInput(
     normalizedFollowup = followup.trim();
   }
 
-  let normalizedSessionId: string | null = null;
-  if (sessionId != null && sessionId !== "") {
-    if (typeof sessionId !== "string" || sessionId.length > 64) {
-      return { success: false, error: "Invalid session." };
+  let normalizedVisitorId: string | null = null;
+  if (visitorId != null && visitorId !== "") {
+    if (typeof visitorId !== "string" || visitorId.length > 64) {
+      return { success: false, error: "Invalid visitor." };
     }
-    normalizedSessionId = sessionId;
+    normalizedVisitorId = visitorId;
   }
 
   let normalizedCategory: string | null = null;
@@ -68,7 +68,7 @@ export function parseSurveyInput(
   return {
     answer,
     followup: normalizedFollowup,
-    sessionId: normalizedSessionId,
+    visitorId: normalizedVisitorId,
     activeCategory: normalizedCategory,
     activeState: normalizedState,
   };
@@ -88,7 +88,7 @@ export async function submitSurvey(body: unknown): Promise<SurveySubmitResult> {
   const id = await insertSurveyResponse(
     parsed.answer,
     parsed.followup ?? null,
-    parsed.sessionId ?? null,
+    parsed.visitorId ?? null,
     parsed.activeCategory ?? null,
     parsed.activeState ?? null,
   );
@@ -100,6 +100,7 @@ export async function submitSurvey(body: unknown): Promise<SurveySubmitResult> {
   const contextLine = [
     parsed.activeCategory && `Category: ${parsed.activeCategory}`,
     parsed.activeState && `State: ${parsed.activeState}`,
+    parsed.visitorId && `Visitor: ${parsed.visitorId}`,
   ]
     .filter(Boolean)
     .join(" · ");
