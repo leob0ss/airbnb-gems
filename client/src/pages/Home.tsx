@@ -423,9 +423,9 @@ export default function Home() {
 
   const handleFilterChange = useCallback((next: ActiveFilters) => {
     setFilters(next);
-    if (next.state) {
-      track("state_filtered", { state: next.state });
-    }
+    track("state_filtered", {
+      us_state: next.state ?? "All states",
+    });
   }, []);
 
   const handleOtherClick = useCallback(() => {
