@@ -7,6 +7,7 @@
  *
  * On submit: saves to DB via /api/filter-request and notifies the owner.
  */
+import { track } from "@/lib/analytics";
 import { X } from "lucide-react";
 import { useRef, useState } from "react";
 
@@ -70,6 +71,9 @@ export default function MissingFilterModal({
         return;
       }
 
+      track("filter_requested", {
+        has_email: Boolean(email.trim()),
+      });
       setStep("thanks");
     } catch {
       setSubmitError("Something went wrong. Please try again.");

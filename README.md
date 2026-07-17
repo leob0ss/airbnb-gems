@@ -29,6 +29,7 @@ pnpm dev
 2. **Storage → Neon** (sets `POSTGRES_URL`).
 3. **Resend** env vars: `NOTIFY_EMAIL`, `RESEND_API_KEY`, optional `RESEND_FROM`.
 4. Optional: `VITE_GOOGLE_MAPS_API_KEY` for the desktop map view.
+5. Optional: `VITE_POSTHOG_PROJECT_TOKEN` (+ `VITE_POSTHOG_HOST`) for product analytics. Visitors are identified by the same `visitor_id` stored in the browser, so Person → Activity in PostHog shows their event stream.
 
 ## Updating listings
 

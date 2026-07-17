@@ -8,6 +8,7 @@
  *
  * Submits once when the user finishes (Skip, Send, or dismiss from follow-up).
  */
+import { track } from "@/lib/analytics";
 import { X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
@@ -52,6 +53,12 @@ export default function SurveyBanner({
     if (!response.ok || !data.success) {
       throw new Error(data.error ?? "Survey submit failed");
     }
+    track("survey_answered", {
+      answer,
+      has_followup: Boolean(followup),
+      category: activeCategory,
+      state: activeState,
+    });
     setSubmitted(true);
   }
 
