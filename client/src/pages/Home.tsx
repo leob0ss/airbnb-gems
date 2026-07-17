@@ -12,6 +12,7 @@ import {
   markPaywallUnlocked,
   shouldShowPaywall,
 } from "@/lib/listingAccess";
+import { openListingUrl } from "@/lib/openListingUrl";
 import { getVisitorId } from "@/lib/visitorId";
 import {
   ChevronLeft,
@@ -458,8 +459,8 @@ export default function Home() {
         state: listing.region ?? filters.state ?? null,
         category: listing.categories ?? activeCategory,
       });
-      window.open(listing.airbnbUrl, "_blank", "noopener,noreferrer");
       incrementListingClickCount();
+      openListingUrl(listing.airbnbUrl);
     },
     [openPaywall, activeCategory, filters.state],
   );

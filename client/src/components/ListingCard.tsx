@@ -1,6 +1,7 @@
 import { Star } from "lucide-react";
 import { useCallback } from "react";
 import type { StaticListing } from "@/lib/listingsData";
+import { openListingUrl } from "@/lib/openListingUrl";
 
 interface ListingCardProps {
   listing: StaticListing;
@@ -61,7 +62,7 @@ export default function ListingCard({
       onListingClick(listing);
       return;
     }
-    window.open(listing.airbnbUrl, "_blank", "noopener,noreferrer");
+    openListingUrl(listing.airbnbUrl);
     onTrackedClick?.();
   }, [listing, onListingClick, onTrackedClick]);
 
