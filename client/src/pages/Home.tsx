@@ -440,6 +440,7 @@ export default function Home() {
   const handleListingClick = useCallback(
     (listing: {
       id: number;
+      title?: string | null;
       airbnbUrl: string;
       categories?: string | null;
       region?: string | null;
@@ -452,8 +453,10 @@ export default function Home() {
 
       track("listing_opened", {
         listing_id: listing.id,
-        category: listing.categories ?? activeCategory,
+        listing_title: listing.title ?? null,
+        listing_url: listing.airbnbUrl,
         state: listing.region ?? filters.state ?? null,
+        category: listing.categories ?? activeCategory,
       });
       window.open(listing.airbnbUrl, "_blank", "noopener,noreferrer");
       incrementListingClickCount();
