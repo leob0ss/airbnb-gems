@@ -5,13 +5,13 @@ import ListingsMap from "@/components/ListingsMap";
 import MissingFilterModal from "@/components/MissingFilterModal";
 import PaywallModal from "@/components/PaywallModal";
 import { useListings } from "@/hooks/useListings";
+import { track } from "@/lib/analytics";
 import {
   incrementListingClickCount,
   isPaywallUnlocked,
   markPaywallUnlocked,
   shouldShowPaywall,
 } from "@/lib/listingAccess";
-import type { StaticListing } from "@/lib/listingsData";
 import { getVisitorId } from "@/lib/visitorId";
 import {
   ChevronLeft,
@@ -286,6 +286,7 @@ function ContactModal({ onClose }: { onClose: () => void }) {
         return;
       }
 
+      track("contact_submitted", { has_email: Boolean(email.trim()) });
       setStep("thanks");
     } catch {
       setSubmitError("Something went wrong. Please try again.");
@@ -399,52 +400,85 @@ export default function Home() {
   const [showMap, setShowMap] = useState(false);
   const [showContact, setShowContact] = useState(false);
   const [showPaywall, setShowPaywall] = useState(false);
+  const [paywallTrigger, setPaywallTrigger] = useState<
+    "listing_limit" | "other" | null
+  >(null);
   const [missingFilterOpen, setMissingFilterOpen] = useState(false);
   const [pendingAfterUnlock, setPendingAfterUnlock] = useState<
     "missingFilter" | null
   >(null);
   const visitorId = useMemo(() => getVisitorId(), []);
 
-  const openPaywall = useCallback(() => {
+  const openPaywall = useCallback((trigger: "listing_limit" | "other") => {
+    setPaywallTrigger(trigger);
     setShowPaywall(true);
+    track("paywall_shown", { trigger });
+  }, []);
+
+  const handleCategoryChange = useCallback((id: ListingCategoryId) => {
+    setActiveCategory(id);
+    track("category_selected", { category: id });
+  }, []);
+
+  const handleFilterChange = useCallback((next: ActiveFilters) => {
+    setFilters(next);
+    if (next.state) {
+      track("state_filtered", { state: next.state });
+    }
   }, []);
 
   const handleOtherClick = useCallback(() => {
+    track("other_clicked");
     if (isPaywallUnlocked()) {
       setMissingFilterOpen(true);
       return;
     }
     setPendingAfterUnlock("missingFilter");
-    setShowPaywall(true);
-  }, []);
+    openPaywall("other");
+  }, [openPaywall]);
 
   const handleListingClick = useCallback(
-    (listing: Pick<StaticListing, "airbnbUrl">) => {
+    (listing: {
+      id: number;
+      airbnbUrl: string;
+      categories?: string | null;
+      region?: string | null;
+    }) => {
       if (shouldShowPaywall()) {
         setPendingAfterUnlock(null);
-        openPaywall();
+        openPaywall("listing_limit");
         return;
       }
 
+      track("listing_opened", {
+        listing_id: listing.id,
+        category: listing.categories ?? activeCategory,
+        state: listing.region ?? filters.state ?? null,
+      });
       window.open(listing.airbnbUrl, "_blank", "noopener,noreferrer");
       incrementListingClickCount();
     },
-    [openPaywall]
+    [openPaywall, activeCategory, filters.state],
   );
 
   const handlePaywallUnlock = useCallback(() => {
     markPaywallUnlocked();
-  }, []);
+    track("paywall_unlocked", { trigger: paywallTrigger });
+  }, [paywallTrigger]);
 
   const handlePaywallClose = useCallback(() => {
     const openMissingFilter =
       isPaywallUnlocked() && pendingAfterUnlock === "missingFilter";
+    if (!isPaywallUnlocked()) {
+      track("paywall_dismissed", { trigger: paywallTrigger });
+    }
     setShowPaywall(false);
+    setPaywallTrigger(null);
     setPendingAfterUnlock(null);
     if (openMissingFilter) {
       setMissingFilterOpen(true);
     }
-  }, [pendingAfterUnlock]);
+  }, [pendingAfterUnlock, paywallTrigger]);
   const [hoveredId, setHoveredId] = useState<number | null>(null);
   const [mapBounds, setMapBounds] = useState<{
     north: number;
@@ -459,6 +493,7 @@ export default function Home() {
   const handleToggleMap = (next: boolean) => {
     if (!next) setMapBounds(null);
     setShowMap(next);
+    track("map_toggled", { enabled: next });
   };
 
   // Make filter bar sticky only after the hero scrolls out of view
@@ -658,11 +693,11 @@ export default function Home() {
             <div className="max-w-[1760px] mx-auto px-6 sm:px-10">
               <CategoryFilterBar
                 activeCategory={activeCategory}
-                onListingCategoryChange={setActiveCategory}
+                onListingCategoryChange={handleCategoryChange}
                 onOtherClick={handleOtherClick}
                 filters={filters}
                 availableStates={availableStates}
-                onFilterChange={setFilters}
+                onFilterChange={handleFilterChange}
               />
             </div>
           </div>
@@ -766,11 +801,11 @@ export default function Home() {
             <div className="max-w-[1760px] mx-auto px-6 sm:px-10">
               <CategoryFilterBar
                 activeCategory={activeCategory}
-                onListingCategoryChange={setActiveCategory}
+                onListingCategoryChange={handleCategoryChange}
                 onOtherClick={handleOtherClick}
                 filters={filters}
                 availableStates={availableStates}
-                onFilterChange={setFilters}
+                onFilterChange={handleFilterChange}
               />
             </div>
           </div>
