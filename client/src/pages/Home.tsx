@@ -24,7 +24,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { DateRange } from "react-day-picker";
 import { DayPicker } from "react-day-picker";
 import "react-day-picker/style.css";
-import { Link } from "wouter";
 
 const PENDING_RESET_KEY = "ag_pending_search_reset";
 
