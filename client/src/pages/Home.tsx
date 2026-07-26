@@ -356,9 +356,6 @@ export default function Home() {
               Search on Airbnb
             </a>
             <p className="text-center text-[12px] text-[#B0B0B0]">
-              Opens airbnb.com directly. Nothing leaves your browser.
-            </p>
-            <p className="text-center text-[12px] text-[#B0B0B0]">
               <Link href="/v1" className="underline underline-offset-2 hover:text-[#717171]">
                 Browse our curated catalog (v1)
               </Link>
@@ -379,9 +376,6 @@ export default function Home() {
             In 2025, Airbnb quietly hid unique categories from its app, making
             it harder to search for special places to stay at. I made this tool
             to fix this.
-          </p>
-          <p className="mx-auto mt-2 max-w-lg text-[13px] leading-relaxed text-[#B0B0B0]">
-            I am not affiliated with Airbnb, Inc.
           </p>
         </header>
 
@@ -406,9 +400,6 @@ export default function Home() {
               );
             })}
           </div>
-          <p className="mt-6 text-center text-[12px] text-[#B0B0B0]">
-            Opens airbnb.com directly. Nothing leaves your browser.
-          </p>
         </main>
       </div>
 
