@@ -448,9 +448,7 @@ export default function Home() {
               Search on Airbnb
             </a>
             <p className="text-center text-[12px] text-[#B0B0B0]">
-              <Link href="/v1" className="underline underline-offset-2 hover:text-[#717171]">
-                Browse our curated catalog (v1)
-              </Link>
+              You will be redirected to Airbnb next
             </p>
           </div>
         </main>
