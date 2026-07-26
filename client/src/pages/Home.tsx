@@ -362,7 +362,7 @@ export default function Home() {
               className="flex items-center gap-1.5 self-start text-[14px] font-medium text-[#222]"
             >
               <ChevronLeft className="h-4 w-4" strokeWidth={2.5} />
-              Vibes
+              Categories
             </button>
 
             <div className="flex flex-col gap-5">
@@ -554,8 +554,8 @@ export default function Home() {
         <div className="mx-auto flex max-w-3xl items-center justify-between gap-4 px-6 py-4">
           <p className="text-[14px] text-[#717171]">
             {canContinue
-              ? `${selectedCount} vibe${selectedCount === 1 ? "" : "s"} selected`
-              : "Pick a vibe to begin"}
+              ? `${selectedCount} categor${selectedCount === 1 ? "y" : "ies"} selected`
+              : "Pick a category to begin"}
           </p>
           <button
             type="button"

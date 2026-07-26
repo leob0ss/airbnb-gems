@@ -1,4 +1,4 @@
-/** Airbnb category / tag filters used by the V2 vibe searcher (mirrors vibebnb). */
+/** Airbnb category / tag filters used by the V2 searcher (mirrors vibebnb). */
 
 export type PropertyVibe = {
   kind: "property";

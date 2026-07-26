@@ -2,7 +2,7 @@
 
 In 2025, Airbnb quietly hid unique categories from its app. This tool brings them back.
 
-- **`/`** — V2 category searcher (pick vibes → place/dates → open Airbnb)
+- **`/`** — V2 category searcher (pick categories → place/dates → open Airbnb)
 - **`/v1`** — Original curated US catalog (treehouses + A-frames)
 
 We don't host bookings; searches and listing cards open official Airbnb pages.
