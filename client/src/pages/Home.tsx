@@ -162,7 +162,7 @@ function PlaceInput({
         className="w-full rounded-xl border border-border bg-background px-4 py-3.5 text-[16px] text-foreground outline-none transition-colors placeholder:text-muted-foreground/70 focus:border-foreground"
       />
       {open && (suggestions.length > 0 || loading) && (
-        <ul className="absolute left-0 right-0 top-[calc(100%+8px)] z-20 overflow-hidden rounded-2xl border border-border bg-background py-2 shadow-[0_6px_20px_rgba(0,0,0,0.12)] dark:shadow-[0_6px_24px_rgba(0,0,0,0.45)]">
+        <ul className="absolute left-0 right-0 top-[calc(100%+8px)] z-20 overflow-hidden rounded-2xl border border-border bg-popover py-2 shadow-[0_6px_20px_rgba(0,0,0,0.12)] dark:shadow-[0_6px_24px_rgba(0,0,0,0.45)]">
           {loading && suggestions.length === 0 && (
             <li className="px-4 py-3 text-[14px] text-muted-foreground/70">
               Searching…
@@ -229,7 +229,7 @@ function WhenPicker({
         />
       </button>
       {open && (
-        <div className="absolute left-0 right-0 top-[calc(100%+8px)] z-20 rounded-2xl border border-border bg-background p-3 shadow-[0_6px_20px_rgba(0,0,0,0.12)] dark:shadow-[0_6px_24px_rgba(0,0,0,0.45)]">
+        <div className="absolute left-0 right-0 top-[calc(100%+8px)] z-20 rounded-2xl border border-border bg-popover p-3 shadow-[0_6px_20px_rgba(0,0,0,0.12)] dark:shadow-[0_6px_24px_rgba(0,0,0,0.45)]">
           <DayPicker
             mode="range"
             selected={range}
