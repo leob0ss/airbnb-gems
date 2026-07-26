@@ -1,923 +1,442 @@
-import FilterBar, { type ActiveFilters } from "@/components/FilterBar";
-import ListingCard from "@/components/ListingCard";
-import ListingCardSkeleton from "@/components/ListingCardSkeleton";
-import ListingsMap from "@/components/ListingsMap";
-import MissingFilterModal from "@/components/MissingFilterModal";
-import PaywallModal from "@/components/PaywallModal";
-import { useListings } from "@/hooks/useListings";
+import {
+  buildAirbnbSearchUrl,
+  searchPlaces,
+  toggleVibeKey,
+  type PlaceSuggestion,
+} from "@/lib/airbnbSearch";
 import { track } from "@/lib/analytics";
-import {
-  incrementListingClickCount,
-  isPaywallUnlocked,
-  markPaywallUnlocked,
-  shouldShowPaywall,
-} from "@/lib/listingAccess";
-import { openListingUrl } from "@/lib/openListingUrl";
-import { getVisitorId } from "@/lib/visitorId";
-import {
-  ChevronLeft,
-  ChevronRight,
-  Map,
-  LayoutGrid,
-  X,
-} from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ALL_VIBES, vibeKey } from "@/lib/vibes";
+import { format } from "date-fns";
+import { ChevronDown, ChevronLeft, MapPin, Search } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import type { DateRange } from "react-day-picker";
+import { DayPicker } from "react-day-picker";
+import "react-day-picker/style.css";
+import { Link } from "wouter";
 
-const ITEMS_PER_PAGE = 24;
+type Step = "vibe" | "search";
 
-// Listing category tabs (filter listings)
-const LISTING_CATEGORIES = [
-  {
-    id: "Treehouse",
-    label: "Treehouses",
-    emoji: "🌲",
-    icon: (
+function BrandMark({ className = "h-8" }: { className?: string }) {
+  return (
+    <div className={`inline-flex items-center gap-2.5 ${className}`}>
       <svg
-        viewBox="0 0 32 32"
+        viewBox="0 0 28 28"
         xmlns="http://www.w3.org/2000/svg"
-        className="w-6 h-6"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
+        className="h-8 w-8"
         aria-hidden="true"
       >
-        <path d="M16 2 L4 14 L10 14 L10 28 L22 28 L22 14 L28 14 Z" />
-        <path d="M16 2 L6 12 L26 12 Z" />
-        <path d="M12 28 L12 20 L20 20 L20 28" />
+        <polygon
+          points="14,2 24,7.5 24,20.5 14,26 4,20.5 4,7.5"
+          fill="#FF385C"
+        />
+        <polygon
+          points="14,7 20,10.5 20,17.5 14,21 8,17.5 8,10.5"
+          fill="none"
+          stroke="#ffffff"
+          strokeWidth="1"
+          opacity="0.6"
+        />
       </svg>
-    ),
-  },
-  {
-    id: "A-Frame",
-    label: "A-Frames",
-    emoji: "🏔️",
-    icon: (
-      <svg
-        viewBox="0 0 32 32"
-        xmlns="http://www.w3.org/2000/svg"
-        className="w-6 h-6"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        aria-hidden="true"
-      >
-        <path d="M16 2 L2 28 L30 28 Z" />
-        <path d="M10 28 L10 18 L22 18 L22 28" />
-        <path d="M8 20 L24 20" />
-      </svg>
-    ),
-  },
-] as const;
-
-type ListingCategoryId = (typeof LISTING_CATEGORIES)[number]["id"];
-
-const OTHER_CATEGORY_TAB = {
-  label: "Other",
-  icon: (
-    <svg
-      viewBox="0 0 32 32"
-      xmlns="http://www.w3.org/2000/svg"
-      className="w-6 h-6"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      aria-hidden="true"
-    >
-      <circle cx="10" cy="16" r="2" fill="currentColor" stroke="none" />
-      <circle cx="16" cy="16" r="2" fill="currentColor" stroke="none" />
-      <circle cx="22" cy="16" r="2" fill="currentColor" stroke="none" />
-    </svg>
-  ),
-} as const;
-
-function categoryTabClass(isActive: boolean): string {
-  return `flex-shrink-0 flex flex-col items-center gap-1 pb-1 px-3 border-b-2 transition-colors ${
-    isActive
-      ? "border-foreground text-foreground"
-      : "border-transparent text-muted-foreground hover:text-foreground hover:border-muted-foreground"
-  }`;
-}
-
-function CategoryTabs({
-  activeCategory,
-  onListingCategoryChange,
-  onOtherClick,
-}: {
-  activeCategory: ListingCategoryId;
-  onListingCategoryChange: (id: ListingCategoryId) => void;
-  onOtherClick: () => void;
-}) {
-  return (
-    <>
-      {LISTING_CATEGORIES.map((cat) => (
-        <button
-          key={cat.id}
-          type="button"
-          onClick={() => onListingCategoryChange(cat.id)}
-          className={categoryTabClass(activeCategory === cat.id)}
-        >
-          {cat.icon}
-          <span className="text-xs font-semibold">{cat.label}</span>
-        </button>
-      ))}
-      <button
-        type="button"
-        onClick={onOtherClick}
-        className={categoryTabClass(false)}
-      >
-        {OTHER_CATEGORY_TAB.icon}
-        <span className="text-xs font-semibold">{OTHER_CATEGORY_TAB.label}</span>
-      </button>
-    </>
-  );
-}
-
-function CategoryFilterBar({
-  activeCategory,
-  onListingCategoryChange,
-  onOtherClick,
-  filters,
-  availableStates,
-  onFilterChange,
-}: {
-  activeCategory: ListingCategoryId;
-  onListingCategoryChange: (id: ListingCategoryId) => void;
-  onOtherClick: () => void;
-  filters: ActiveFilters;
-  availableStates: string[];
-  onFilterChange: (filters: ActiveFilters) => void;
-}) {
-  return (
-    <div className="@container/filter-bar">
-      <div className="flex flex-col @[720px]:flex-row @[720px]:items-center @[720px]:py-4">
-        <div className="flex min-w-0 items-center gap-2 overflow-x-auto scrollbar-none py-4 @[720px]:flex-1 @[720px]:py-0">
-          <CategoryTabs
-            activeCategory={activeCategory}
-            onListingCategoryChange={onListingCategoryChange}
-            onOtherClick={onOtherClick}
-          />
-        </div>
-        <div className="border-t border-border py-3 -mx-6 px-6 sm:-mx-10 sm:px-10 @[720px]:mx-0 @[720px]:border-t-0 @[720px]:px-0 @[720px]:py-0 @[720px]:ml-auto @[720px]:flex-shrink-0">
-          <FilterBar
-            filters={filters}
-            availableStates={availableStates}
-            onFilterChange={onFilterChange}
-            inline
-          />
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function Pagination({
-  page,
-  totalPages,
-  total,
-  onPageChange,
-}: {
-  page: number;
-  totalPages: number;
-  total: number;
-  onPageChange: (p: number) => void;
-}) {
-  return (
-    <div className="flex items-center justify-center gap-2 mt-10 mb-6">
-      <button
-        onClick={() => onPageChange(page - 1)}
-        disabled={page === 1}
-        className="flex items-center justify-center w-10 h-10 rounded-full border border-border text-sm text-foreground hover:bg-secondary disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-        aria-label="Previous page"
-      >
-        <ChevronLeft className="w-4 h-4" />
-      </button>
-
-      <span className="text-sm text-muted-foreground px-3">
-        Page {page} of {totalPages}
+      <span className="text-[28px] font-semibold tracking-tight text-[#222]">
+        Airbnb <span className="text-[#FF385C]">Gems</span>
       </span>
-
-      <button
-        onClick={() => onPageChange(page + 1)}
-        disabled={page === totalPages}
-        className="flex items-center justify-center w-10 h-10 rounded-full border border-border text-sm text-foreground hover:bg-secondary disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-        aria-label="Next page"
-      >
-        <ChevronRight className="w-4 h-4" />
-      </button>
     </div>
   );
 }
 
-function EmptyState({
-  hasFilters,
-  onClear,
+function VibeTile({
+  active,
+  icon,
+  label,
+  onClick,
 }: {
-  hasFilters: boolean;
-  onClear: () => void;
+  active: boolean;
+  icon: string;
+  label: string;
+  onClick: () => void;
 }) {
   return (
-    <div className="flex flex-col items-center justify-center py-24 text-center">
-      <div className="text-5xl mb-4">🏡</div>
-      <h3 className="text-lg font-semibold text-foreground mb-2">
-        No listings found
-      </h3>
-      <p className="text-sm text-muted-foreground mb-6 max-w-sm leading-relaxed">
-        {hasFilters
-          ? "We don't have listings for that combination yet. Try removing the state filter."
-          : "We don't have listings in this category yet."}
-      </p>
-      <div className="flex flex-col sm:flex-row items-center gap-3">
-        {hasFilters && (
-          <button
-            onClick={onClear}
-            className="text-sm font-semibold underline text-foreground hover:text-muted-foreground transition-colors"
-          >
-            Remove filter
-          </button>
-        )}
-      </div>
-    </div>
+    <button
+      type="button"
+      aria-pressed={active}
+      onClick={onClick}
+      className={[
+        "group flex cursor-pointer flex-col items-center gap-1.5 rounded-2xl border p-2.5 transition-colors duration-200 sm:p-3",
+        active
+          ? "border-[#222] bg-[#F7F7F7]"
+          : "border-[#EBEBEB] hover:border-[#DDDDDD]",
+      ].join(" ")}
+    >
+      <img
+        src={icon}
+        alt=""
+        width={64}
+        height={64}
+        className="h-12 w-12 object-contain sm:h-14 sm:w-14"
+        draggable={false}
+      />
+      <span className="text-center text-[12px] leading-tight text-[#717171] sm:text-[13px]">
+        {label}
+      </span>
+    </button>
   );
 }
 
-function ContactModal({ onClose }: { onClose: () => void }) {
-  const [message, setMessage] = useState("");
-  const [email, setEmail] = useState("");
-  const [emailError, setEmailError] = useState("");
-  const [submitError, setSubmitError] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [step, setStep] = useState<"form" | "thanks">("form");
+function PlaceInput({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  const [suggestions, setSuggestions] = useState<PlaceSuggestion[]>([]);
+  const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const pickedRef = useRef(false);
 
-  function validateEmail(val: string) {
-    if (!val) return "";
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val)
-      ? ""
-      : "Please enter a valid email.";
-  }
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!message.trim()) return;
-    const err = validateEmail(email);
-    if (err) {
-      setEmailError(err);
+  useEffect(() => {
+    if (pickedRef.current) {
+      pickedRef.current = false;
       return;
     }
-
-    setIsSubmitting(true);
-    setSubmitError("");
-
-    try {
-      const response = await fetch("/api/contact", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          message: message.trim(),
-          email: email.trim() || null,
-        }),
-      });
-
-      const data = (await response.json()) as {
-        success?: boolean;
-        error?: string;
-      };
-
-      if (!response.ok || !data.success) {
-        setSubmitError(data.error ?? "Something went wrong. Please try again.");
+    const q = value.trim();
+    const ctrl = new AbortController();
+    const t = setTimeout(async () => {
+      if (q.length < 2) {
+        setSuggestions([]);
         return;
       }
+      setLoading(true);
+      try {
+        const results = await searchPlaces(q, ctrl.signal);
+        setSuggestions(results);
+        setOpen(true);
+      } catch {
+        /* aborted / network */
+      } finally {
+        setLoading(false);
+      }
+    }, 350);
+    return () => {
+      clearTimeout(t);
+      ctrl.abort();
+    };
+  }, [value]);
 
-      track("contact_submitted", { has_email: Boolean(email.trim()) });
-      setStep("thanks");
-    } catch {
-      setSubmitError("Something went wrong. Please try again.");
-    } finally {
-      setIsSubmitting(false);
+  useEffect(() => {
+    function onDoc(e: MouseEvent) {
+      if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
     }
-  }
+    document.addEventListener("mousedown", onDoc);
+    return () => document.removeEventListener("mousedown", onDoc);
+  }, []);
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
-      onClick={onClose}
-    >
-      <div
-        className="relative bg-background rounded-2xl shadow-2xl max-w-md w-full p-8"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-4 p-1.5 rounded-full hover:bg-secondary transition-colors"
-          aria-label="Close"
-        >
-          <X className="w-4 h-4 text-muted-foreground" />
-        </button>
-
-        {step === "form" ? (
-          <>
-            <h2 className="text-xl font-bold text-foreground mb-1">
-              Get in touch
-            </h2>
-            <p className="text-sm text-muted-foreground leading-relaxed mb-6">
-              Have a question, found a bug, or want to request a feature? We'd
-              love to hear from you.
-            </p>
-            <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-              <div className="flex flex-col gap-1.5">
-                <label className="text-sm font-medium text-foreground">
-                  Message
-                </label>
-                <textarea
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                  placeholder="What's on your mind?"
-                  rows={4}
-                  maxLength={2000}
-                  required
-                  autoFocus
-                  className="bg-secondary text-foreground placeholder:text-muted-foreground rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-foreground/20 resize-none border border-border"
-                />
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <label className="text-sm font-medium text-foreground flex items-center gap-2">
-                  Your email
-                  <span className="text-xs font-normal text-muted-foreground">
-                    optional
-                  </span>
-                </label>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => {
-                    setEmail(e.target.value);
-                    setEmailError("");
-                  }}
-                  placeholder="you@example.com"
-                  className="bg-secondary text-foreground placeholder:text-muted-foreground rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-foreground/20 border border-border"
-                />
-                {emailError && (
-                  <p className="text-xs text-red-500">{emailError}</p>
-                )}
-              </div>
-              {submitError && (
-                <p className="text-xs text-red-500">{submitError}</p>
-              )}
+    <div ref={wrapRef} className="relative">
+      <input
+        type="text"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        onFocus={() => suggestions.length && setOpen(true)}
+        placeholder="Anywhere"
+        autoComplete="off"
+        className="w-full rounded-xl border border-[#DDDDDD] bg-white px-4 py-3.5 text-[16px] text-[#222] outline-none transition-colors placeholder:text-[#B0B0B0] focus:border-[#222]"
+      />
+      {open && (suggestions.length > 0 || loading) && (
+        <ul className="absolute left-0 right-0 top-[calc(100%+8px)] z-20 overflow-hidden rounded-2xl border border-[#DDDDDD] bg-white py-2 shadow-[0_6px_20px_rgba(0,0,0,0.12)]">
+          {loading && suggestions.length === 0 && (
+            <li className="px-4 py-3 text-[14px] text-[#B0B0B0]">
+              Searching…
+            </li>
+          )}
+          {suggestions.map((s) => (
+            <li key={s.full}>
               <button
-                type="submit"
-                disabled={!message.trim() || isSubmitting}
-                className="w-full py-2.5 rounded-xl text-sm font-semibold bg-foreground text-background hover:bg-foreground/90 disabled:opacity-40 transition-colors"
+                type="button"
+                title={s.full}
+                onClick={() => {
+                  pickedRef.current = true;
+                  onChange(s.name);
+                  setOpen(false);
+                }}
+                className="flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-[#F7F7F7]"
               >
-                {isSubmitting ? "Sending…" : "Send message"}
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#EBEBEB]">
+                  <MapPin className="h-4 w-4 text-[#222]" />
+                </span>
+                <span className="truncate text-[14px] text-[#222]">
+                  {s.name}
+                </span>
               </button>
-            </form>
-          </>
-        ) : (
-          <>
-            <h2 className="text-xl font-bold text-foreground mb-2">
-              Thanks! 🙏
-            </h2>
-            <p className="text-sm text-muted-foreground leading-relaxed mb-6">
-              We've received your message and will get back to you if you left
-              an email.
-            </p>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+function WhenPicker({
+  range,
+  onChange,
+}: {
+  range: DateRange | undefined;
+  onChange: (r: DateRange | undefined) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const label = useMemo(() => {
+    if (range?.from && range?.to) {
+      return `${format(range.from, "MMM d")} – ${format(range.to, "MMM d")}`;
+    }
+    if (range?.from) return format(range.from, "MMM d");
+    return "Anytime";
+  }, [range]);
+
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        aria-expanded={open}
+        onClick={() => setOpen((v) => !v)}
+        className="flex w-full items-center justify-between rounded-xl border border-[#DDDDDD] bg-white px-4 py-3.5 text-left transition-colors hover:border-[#222]"
+      >
+        <span
+          className={`text-[16px] ${range?.from ? "text-[#222]" : "text-[#B0B0B0]"}`}
+        >
+          {label}
+        </span>
+        <ChevronDown
+          className={`h-[18px] w-[18px] text-[#717171] transition-transform ${open ? "rotate-180" : ""}`}
+        />
+      </button>
+      {open && (
+        <div className="absolute left-0 right-0 top-[calc(100%+8px)] z-20 rounded-2xl border border-[#DDDDDD] bg-white p-3 shadow-[0_6px_20px_rgba(0,0,0,0.12)]">
+          <DayPicker
+            mode="range"
+            selected={range}
+            onSelect={onChange}
+            numberOfMonths={1}
+            disabled={{ before: new Date() }}
+            className="mx-auto"
+          />
+          <div className="mt-2 flex justify-between px-1">
             <button
-              onClick={onClose}
-              className="w-full py-2.5 rounded-xl text-sm font-semibold bg-foreground text-background hover:bg-foreground/90 transition-colors"
+              type="button"
+              className="text-[13px] text-[#717171] hover:text-[#222]"
+              onClick={() => {
+                onChange(undefined);
+                setOpen(false);
+              }}
             >
-              Close
+              Clear
             </button>
-          </>
-        )}
-      </div>
+            <button
+              type="button"
+              className="text-[13px] font-medium text-[#FF385C]"
+              onClick={() => setOpen(false)}
+            >
+              Done
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
 export default function Home() {
-  const [activeCategory, setActiveCategory] =
-    useState<ListingCategoryId>("Treehouse");
-  const [filters, setFilters] = useState<ActiveFilters>({});
-  const [page, setPage] = useState(1);
-  const [showMap, setShowMap] = useState(false);
-  const [showContact, setShowContact] = useState(false);
-  const [showPaywall, setShowPaywall] = useState(false);
-  const [paywallTrigger, setPaywallTrigger] = useState<
-    "listing_limit" | "other" | null
-  >(null);
-  const [missingFilterOpen, setMissingFilterOpen] = useState(false);
-  const [pendingAfterUnlock, setPendingAfterUnlock] = useState<
-    "missingFilter" | null
-  >(null);
-  const visitorId = useMemo(() => getVisitorId(), []);
+  const [step, setStep] = useState<Step>("vibe");
+  const [selected, setSelected] = useState<Set<string>>(() => new Set());
+  const [place, setPlace] = useState("");
+  const [range, setRange] = useState<DateRange | undefined>();
+  const [guests, setGuests] = useState("");
+  const [priceMax, setPriceMax] = useState("");
 
-  const openPaywall = useCallback((trigger: "listing_limit" | "other") => {
-    setPaywallTrigger(trigger);
-    setShowPaywall(true);
-    track("paywall_shown", { trigger });
-  }, []);
+  const selectedCount = selected.size;
+  const canContinue = selectedCount > 0;
 
-  const handleCategoryChange = useCallback((id: ListingCategoryId) => {
-    setActiveCategory(id);
-    track("category_selected", { category: id });
-  }, []);
-
-  const handleFilterChange = useCallback((next: ActiveFilters) => {
-    setFilters(next);
-    track("state_filtered", {
-      us_state: next.state ?? "All states",
+  const searchUrl = useMemo(() => {
+    const checkin = range?.from
+      ? format(range.from, "yyyy-MM-dd")
+      : undefined;
+    const checkout = range?.to ? format(range.to, "yyyy-MM-dd") : undefined;
+    const adults = guests ? Number(guests) : undefined;
+    const max = priceMax ? Number(priceMax) : undefined;
+    return buildAirbnbSearchUrl({
+      place,
+      checkin,
+      checkout,
+      adults: Number.isFinite(adults) ? adults : undefined,
+      priceMax: Number.isFinite(max) ? max : undefined,
+      selectedKeys: Array.from(selected),
     });
-  }, []);
+  }, [place, range, guests, priceMax, selected]);
 
-  const handleOtherClick = useCallback(() => {
-    track("other_clicked");
-    if (isPaywallUnlocked()) {
-      setMissingFilterOpen(true);
-      return;
-    }
-    setPendingAfterUnlock("missingFilter");
-    openPaywall("other");
-  }, [openPaywall]);
+  if (step === "search") {
+    return (
+      <div className="min-h-screen bg-white text-[#222]">
+        <main className="mx-auto w-full max-w-3xl px-6">
+          <div className="mx-auto flex max-w-md flex-col gap-6 pt-12 pb-16">
+            <button
+              type="button"
+              onClick={() => setStep("vibe")}
+              className="flex items-center gap-1.5 self-start text-[14px] font-medium text-[#222]"
+            >
+              <ChevronLeft className="h-4 w-4" strokeWidth={2.5} />
+              Vibes
+            </button>
 
-  const handleListingClick = useCallback(
-    (listing: {
-      id: number;
-      title?: string | null;
-      airbnbUrl: string;
-      categories?: string | null;
-      region?: string | null;
-    }) => {
-      if (shouldShowPaywall()) {
-        setPendingAfterUnlock(null);
-        openPaywall("listing_limit");
-        return;
-      }
+            <div className="flex flex-col gap-5">
+              <div>
+                <label className="mb-2 block text-[15px] font-semibold text-[#222]">
+                  Where
+                </label>
+                <PlaceInput value={place} onChange={setPlace} />
+                <p className="mt-1.5 text-[13px] text-[#B0B0B0]">
+                  Leave empty to search everywhere.
+                </p>
+              </div>
 
-      track("listing_opened", {
-        listing_id: listing.id,
-        listing_title: listing.title ?? null,
-        listing_url: listing.airbnbUrl,
-        state: listing.region ?? filters.state ?? null,
-        category: listing.categories ?? activeCategory,
-      });
-      incrementListingClickCount();
-      openListingUrl(listing.airbnbUrl);
-    },
-    [openPaywall, activeCategory, filters.state],
-  );
+              <div>
+                <label className="mb-2 block text-[15px] font-semibold text-[#222]">
+                  When
+                </label>
+                <WhenPicker range={range} onChange={setRange} />
+              </div>
 
-  const handlePaywallUnlock = useCallback(() => {
-    markPaywallUnlocked();
-    track("paywall_unlocked", { trigger: paywallTrigger });
-  }, [paywallTrigger]);
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="mb-2 block text-[15px] font-semibold text-[#222]">
+                    Guests
+                  </label>
+                  <input
+                    type="number"
+                    min={0}
+                    inputMode="numeric"
+                    placeholder="Any"
+                    value={guests}
+                    onChange={(e) => setGuests(e.target.value)}
+                    className="w-full rounded-xl border border-[#DDDDDD] bg-white px-4 py-3.5 text-[16px] text-[#222] outline-none transition-colors placeholder:text-[#B0B0B0] focus:border-[#222]"
+                  />
+                </div>
+                <div>
+                  <label className="mb-2 block text-[15px] font-semibold text-[#222]">
+                    Max / night
+                  </label>
+                  <input
+                    type="number"
+                    min={0}
+                    inputMode="numeric"
+                    placeholder="Any"
+                    value={priceMax}
+                    onChange={(e) => setPriceMax(e.target.value)}
+                    className="w-full rounded-xl border border-[#DDDDDD] bg-white px-4 py-3.5 text-[16px] text-[#222] outline-none transition-colors placeholder:text-[#B0B0B0] focus:border-[#222]"
+                  />
+                </div>
+              </div>
+            </div>
 
-  const handlePaywallClose = useCallback(() => {
-    const openMissingFilter =
-      isPaywallUnlocked() && pendingAfterUnlock === "missingFilter";
-    if (!isPaywallUnlocked()) {
-      track("paywall_dismissed", { trigger: paywallTrigger });
-    }
-    setShowPaywall(false);
-    setPaywallTrigger(null);
-    setPendingAfterUnlock(null);
-    if (openMissingFilter) {
-      setMissingFilterOpen(true);
-    }
-  }, [pendingAfterUnlock, paywallTrigger]);
-  const [hoveredId, setHoveredId] = useState<number | null>(null);
-  const [mapBounds, setMapBounds] = useState<{
-    north: number;
-    south: number;
-    east: number;
-    west: number;
-  } | null>(null);
-  const gridRef = useRef<HTMLDivElement>(null);
-  const heroRef = useRef<HTMLElement>(null);
-  const [filterSticky, setFilterSticky] = useState(false);
-
-  const handleToggleMap = (next: boolean) => {
-    if (!next) setMapBounds(null);
-    setShowMap(next);
-    track("map_toggled", { enabled: next });
-  };
-
-  // Make filter bar sticky only after the hero scrolls out of view
-  useEffect(() => {
-    if (showMap) return;
-    const hero = heroRef.current;
-    if (!hero) return;
-    const observer = new IntersectionObserver(
-      ([entry]) => setFilterSticky(!entry.isIntersecting),
-      { threshold: 0, rootMargin: "-80px 0px 0px 0px" },
+            <a
+              href={searchUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => {
+                track("vibe_search_opened", {
+                  vibe_count: selectedCount,
+                  has_place: Boolean(place.trim()),
+                  has_dates: Boolean(range?.from),
+                });
+              }}
+              className="flex h-14 items-center justify-center gap-2 rounded-xl bg-[#FF385C] text-[16px] font-medium text-white transition-colors duration-200 hover:bg-[#E31C5F]"
+            >
+              <Search className="h-[18px] w-[18px]" strokeWidth={3} />
+              Search on Airbnb
+            </a>
+            <p className="text-center text-[12px] text-[#B0B0B0]">
+              Opens airbnb.com directly. Nothing leaves your browser.
+            </p>
+            <p className="text-center text-[12px] text-[#B0B0B0]">
+              <Link href="/v1" className="underline underline-offset-2 hover:text-[#717171]">
+                Browse our curated catalog (v1)
+              </Link>
+            </p>
+          </div>
+        </main>
+      </div>
     );
-    observer.observe(hero);
-    return () => observer.disconnect();
-  }, [showMap]);
-
-  // Reset to page 1 when filters or category change
-  useEffect(() => {
-    setPage(1);
-  }, [filters, activeCategory]);
-
-  const STATE_LABELS: Record<string, string> = {
-    AK: "Alaska",
-    AL: "Alabama",
-    AR: "Arkansas",
-    AZ: "Arizona",
-    CA: "California",
-    CO: "Colorado",
-    CT: "Connecticut",
-    DE: "Delaware",
-    FL: "Florida",
-    GA: "Georgia",
-    HI: "Hawaii",
-    IA: "Iowa",
-    ID: "Idaho",
-    IL: "Illinois",
-    IN: "Indiana",
-    KS: "Kansas",
-    KY: "Kentucky",
-    LA: "Louisiana",
-    MA: "Massachusetts",
-    MD: "Maryland",
-    ME: "Maine",
-    MI: "Michigan",
-    MN: "Minnesota",
-    MO: "Missouri",
-    MS: "Mississippi",
-    MT: "Montana",
-    NC: "North Carolina",
-    ND: "North Dakota",
-    NE: "Nebraska",
-    NH: "New Hampshire",
-    NJ: "New Jersey",
-    NM: "New Mexico",
-    NV: "Nevada",
-    NY: "New York",
-    OH: "Ohio",
-    OK: "Oklahoma",
-    OR: "Oregon",
-    PA: "Pennsylvania",
-    RI: "Rhode Island",
-    SC: "South Carolina",
-    SD: "South Dakota",
-    TN: "Tennessee",
-    TX: "Texas",
-    UT: "Utah",
-    VA: "Virginia",
-    VT: "Vermont",
-    WA: "Washington",
-    WI: "Wisconsin",
-    WV: "West Virginia",
-    WY: "Wyoming",
-  };
-  const activeFilterLabel = filters.state
-    ? (STATE_LABELS[filters.state] ?? filters.state)
-    : undefined;
-
-  const { listings, filteredListings, total, availableStates, loading } =
-    useListings(
-      { category: activeCategory, region: filters.state },
-      page,
-      ITEMS_PER_PAGE,
-    );
-
-  // In map view, filter the grid to only listings within the current map bounds.
-  const visibleListings = useMemo(() => {
-    if (!showMap) return listings;
-    if (!mapBounds) return filteredListings;
-    return filteredListings.filter((l) => {
-      const lat = l.latitude ? Number(l.latitude) : null;
-      const lng = l.longitude ? Number(l.longitude) : null;
-      if (!lat || !lng) return false;
-      return (
-        lat >= mapBounds.south &&
-        lat <= mapBounds.north &&
-        lng >= mapBounds.west &&
-        lng <= mapBounds.east
-      );
-    });
-  }, [listings, filteredListings, showMap, mapBounds]);
-
-  const totalPages = Math.ceil(total / ITEMS_PER_PAGE);
-
-  const handlePageChange = (newPage: number) => {
-    setPage(newPage);
-    gridRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-  };
-
-  const currentCategory = LISTING_CATEGORIES.find(
-    (c) => c.id === activeCategory,
-  )!;
+  }
 
   return (
-    <div
-      className={
-        showMap
-          ? "h-screen bg-background flex flex-col overflow-hidden"
-          : "min-h-screen bg-background flex flex-col"
-      }
-    >
-      {/* ─── Navigation ──────────────────────────────────────────────────────── */}
-      <nav className="sticky top-0 z-40 bg-background border-b border-border flex-shrink-0">
-        <div className="max-w-[1760px] mx-auto px-6 sm:px-10 flex items-center justify-between h-[80px]">
-          {/* Logo */}
-          <a
-            href="/"
-            className="flex items-center gap-2 flex-shrink-0"
-            aria-label="Airbnb Gems home"
-          >
-            <svg
-              viewBox="0 0 28 28"
-              xmlns="http://www.w3.org/2000/svg"
-              className="w-7 h-7"
-              aria-hidden="true"
-            >
-              <polygon
-                points="14,2 24,7.5 24,20.5 14,26 4,20.5 4,7.5"
-                fill="#FF385C"
-              />
-              <polygon
-                points="14,7 20,10.5 20,17.5 14,21 8,17.5 8,10.5"
-                fill="none"
-                stroke="white"
-                strokeWidth="1"
-                opacity="0.6"
-              />
-              <line
-                x1="14"
-                y1="2"
-                x2="14"
-                y2="7"
-                stroke="white"
-                strokeWidth="1"
-                opacity="0.5"
-              />
-              <line
-                x1="24"
-                y1="7.5"
-                x2="20"
-                y2="10.5"
-                stroke="white"
-                strokeWidth="1"
-                opacity="0.5"
-              />
-              <line
-                x1="4"
-                y1="7.5"
-                x2="8"
-                y2="10.5"
-                stroke="white"
-                strokeWidth="1"
-                opacity="0.5"
-              />
-            </svg>
-            <span
-              className="font-bold text-xl tracking-tight text-foreground"
-              style={{ fontFamily: "'Inter', sans-serif" }}
-            >
-              Airbnb <span className="text-[#FF385C]">Gems</span>
-            </span>
-          </a>
+    <div className="min-h-screen bg-white text-[#222]">
+      <div className="pb-40">
+        <header className="px-6 pt-16 pb-8 text-center sm:pt-20 sm:pb-10">
+          <h1 className="sr-only">Airbnb Gems</h1>
+          <BrandMark />
+          <p className="mx-auto mt-4 max-w-lg text-[15px] leading-relaxed text-[#717171]">
+            In 2025, Airbnb quietly hid unique categories from its app, making
+            it harder to search for special places to stay at. I made this tool
+            to fix this.
+          </p>
+          <p className="mx-auto mt-2 max-w-lg text-[13px] leading-relaxed text-[#B0B0B0]">
+            I am not affiliated with Airbnb, Inc.
+          </p>
+        </header>
 
-          <button
-            onClick={() => setShowContact(true)}
-            className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-          >
-            Got feedback?
-          </button>
-        </div>
-      </nav>
-
-      {/* ─── Main content ────────────────────────────────────────────────────── */}
-      {showMap ? (
-        /* ── MAP VIEW: split layout ── */
-        <div className="flex flex-col flex-1 min-h-0">
-          {/* ── Category tabs + filter bar (map view) ── */}
-          <div className="border-b border-border bg-background flex-shrink-0 z-30">
-            <div className="max-w-[1760px] mx-auto px-6 sm:px-10">
-              <CategoryFilterBar
-                activeCategory={activeCategory}
-                onListingCategoryChange={handleCategoryChange}
-                onOtherClick={handleOtherClick}
-                filters={filters}
-                availableStates={availableStates}
-                onFilterChange={handleFilterChange}
-              />
-            </div>
-          </div>
-
-          {/* ── Split panel ── */}
-          <div className="flex flex-1 min-h-0">
-            {/* Left: scrollable grid */}
-            <div className="w-[45%] xl:w-[40%] overflow-y-auto flex-shrink-0 border-r border-border">
-              <div
-                className="p-6 grid gap-6 grid-cols-[repeat(auto-fill,minmax(280px,1fr))]"
-                ref={gridRef}
-              >
-                {loading
-                  ? Array.from({ length: 8 }).map((_, i) => (
-                      <ListingCardSkeleton key={i} />
-                    ))
-                  : visibleListings.map((listing) => (
-                      <div
-                        key={listing.id}
-                        onMouseEnter={() => setHoveredId(listing.id)}
-                        onMouseLeave={() => setHoveredId(null)}
-                      >
-                        <ListingCard
-                          listing={listing}
-                          activeFilter={activeFilterLabel}
-                          onListingClick={handleListingClick}
-                        />
-                      </div>
-                    ))}
-              </div>
-              {totalPages > 1 && !loading && (
-                <div className="px-6 pb-6">
-                  <Pagination
-                    page={page}
-                    totalPages={totalPages}
-                    total={total}
-                    onPageChange={handlePageChange}
-                  />
-                </div>
-              )}
-            </div>
-
-            {/* Right: sticky map */}
-            <div className="flex-1 relative">
-              <ListingsMap
-                listings={filteredListings}
-                hoveredId={hoveredId}
-                onHover={setHoveredId}
-                onBoundsChange={setMapBounds}
-                onListingClick={handleListingClick}
-              />
-            </div>
-          </div>
-          {/* end split panel */}
-        </div>
-      ) : (
-        /* ── GRID VIEW ── */
-        <>
-          {/* ── Hero ── */}
-          <header
-            ref={heroRef}
-            className="relative border-b border-border overflow-hidden flex-shrink-0"
-          >
-            <div
-              className="absolute inset-0 opacity-[0.03]"
-              style={{
-                backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000000' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/SVG%3E")`,
-              }}
-            />
-            <div className="max-w-[1760px] mx-auto px-6 sm:px-10 relative py-8 md:py-10">
-              <div className="max-w-4xl">
-                <h1
-                  className="text-3xl md:text-4xl leading-[1.1] text-foreground mb-3"
-                  style={{
-                    fontFamily: "'Fraunces', Georgia, serif",
-                    fontWeight: 700,
+        <main className="mx-auto w-full max-w-3xl px-6">
+          <div className="grid grid-cols-3 gap-2 sm:grid-cols-5 md:grid-cols-6">
+            {ALL_VIBES.map((vibe) => {
+              const key = vibeKey(vibe);
+              return (
+                <VibeTile
+                  key={key}
+                  active={selected.has(key)}
+                  icon={vibe.icon}
+                  label={vibe.label}
+                  onClick={() => {
+                    setSelected((prev) => toggleVibeKey(prev, vibe));
+                    track("vibe_toggled", {
+                      vibe: vibe.label,
+                      selected: !selected.has(key),
+                    });
                   }}
-                >
-                  Find the most unique Airbnbs.
-                </h1>
-                <p className="text-sm text-muted-foreground leading-relaxed mb-2">
-                  In 2025, Airbnb quietly removed certain categories from its
-                  app (treehouse, boat, dome...) making it harder to search
-                  unique listings. This website is the result of spending
-                  hundreds of hours hand-picking the best places I could find
-                  across the US and listing them in one place.
-                </p>
-                <p className="text-xs text-muted-foreground/60">
-                  We are not affiliated with Airbnb, Inc.
-                </p>
-              </div>
-            </div>
-          </header>
-
-          {/* ── Category tabs + filter bar ── */}
-          <div
-            className={`border-b border-border bg-background z-30 transition-shadow ${
-              filterSticky ? "sticky top-[80px] shadow-sm" : ""
-            }`}
-          >
-            <div className="max-w-[1760px] mx-auto px-6 sm:px-10">
-              <CategoryFilterBar
-                activeCategory={activeCategory}
-                onListingCategoryChange={handleCategoryChange}
-                onOtherClick={handleOtherClick}
-                filters={filters}
-                availableStates={availableStates}
-                onFilterChange={handleFilterChange}
-              />
-            </div>
+                />
+              );
+            })}
           </div>
-
-          <main
-            className="max-w-[1760px] mx-auto w-full px-6 sm:px-10 py-8 flex-1"
-            ref={gridRef}
-          >
-            {loading ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
-                {Array.from({ length: ITEMS_PER_PAGE }).map((_, i) => (
-                  <ListingCardSkeleton key={i} />
-                ))}
-              </div>
-            ) : listings.length === 0 ? (
-              <EmptyState
-                hasFilters={Boolean(activeFilterLabel)}
-                onClear={() => setFilters({})}
-              />
-            ) : (
-              <>
-                {/* Result count */}
-                <p className="text-sm text-foreground font-semibold mb-6">
-                  {total > 0
-                    ? `${total.toLocaleString()} ${currentCategory.label.toLowerCase()}`
-                    : ""}
-                  {activeFilterLabel ? ` in ${activeFilterLabel}` : ""}
-                </p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
-                  {listings.map((listing) => (
-                    <div
-                      key={listing.id}
-                      onMouseEnter={() => setHoveredId(listing.id)}
-                      onMouseLeave={() => setHoveredId(null)}
-                    >
-                      <ListingCard
-                        listing={listing}
-                        activeFilter={activeFilterLabel}
-                        onListingClick={handleListingClick}
-                      />
-                    </div>
-                  ))}
-                </div>
-                {totalPages > 1 && (
-                  <Pagination
-                    page={page}
-                    totalPages={totalPages}
-                    total={total}
-                    onPageChange={handlePageChange}
-                  />
-                )}
-              </>
-            )}
-          </main>
-        </>
-      )}
-
-      {/* ─── Floating map/grid toggle (desktop only) ─────────────────────── */}
-      <div className="hidden sm:block fixed bottom-8 left-1/2 -translate-x-1/2 z-50">
-        <button
-          onClick={() => handleToggleMap(!showMap)}
-          className="flex items-center gap-2 px-5 py-3 bg-foreground text-background rounded-full shadow-lg text-sm font-semibold hover:scale-105 active:scale-95 transition-transform duration-150"
-        >
-          {showMap ? (
-            <>
-              <LayoutGrid className="w-4 h-4" />
-              Show list
-            </>
-          ) : (
-            <>
-              <Map className="w-4 h-4" />
-              Show map
-            </>
-          )}
-        </button>
+          <p className="mt-6 text-center text-[12px] text-[#B0B0B0]">
+            Opens airbnb.com directly. Nothing leaves your browser.
+          </p>
+        </main>
       </div>
 
-      {/* ─── Footer ─────────────────────────────────────────────────────────── */}
-      {!showMap && (
-        <footer className="border-t border-border mt-8 flex-shrink-0 bg-secondary">
-          <div className="max-w-[1760px] mx-auto px-6 sm:px-10 py-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <p className="text-sm text-muted-foreground">
-              © 2026 Airbnb Gems · Not affiliated with or endorsed by Airbnb,
-              Inc. · All listings link to official Airbnb pages.
-            </p>
-            <p className="text-sm text-muted-foreground">
-              Data sourced from Airbnb's public listing pages.
-            </p>
-          </div>
-        </footer>
-      )}
-
-      {showContact && <ContactModal onClose={() => setShowContact(false)} />}
-
-      {missingFilterOpen && (
-        <MissingFilterModal
-          visitorId={visitorId}
-          onClose={() => setMissingFilterOpen(false)}
-        />
-      )}
-
-      {showPaywall && (
-        <PaywallModal
-          visitorId={visitorId}
-          onClose={handlePaywallClose}
-          onUnlock={handlePaywallUnlock}
-        />
-      )}
+      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-[#EBEBEB] bg-white/95 backdrop-blur-sm">
+        <div className="mx-auto flex max-w-3xl items-center justify-between gap-4 px-6 py-4">
+          <p className="text-[14px] text-[#717171]">
+            {canContinue
+              ? `${selectedCount} vibe${selectedCount === 1 ? "" : "s"} selected`
+              : "Pick a vibe to begin"}
+          </p>
+          <button
+            type="button"
+            disabled={!canContinue}
+            onClick={() => {
+              track("vibe_continue", { vibe_count: selectedCount });
+              setStep("search");
+            }}
+            className={[
+              "h-12 rounded-lg px-7 text-[16px] font-medium text-white transition-colors duration-200",
+              canContinue
+                ? "cursor-pointer bg-[#FF385C] hover:bg-[#E31C5F]"
+                : "cursor-not-allowed bg-[#FFB3C1]",
+            ].join(" ")}
+          >
+            Continue
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

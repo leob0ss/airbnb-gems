@@ -1,8 +1,11 @@
 # Airbnb Gems
 
-Browse Airbnb listings by architectural category — treehouses, A-frames, and more — using filters Airbnb removed from its main navigation. Each card links directly to the official Airbnb listing. We curate and filter only; we don't host bookings.
+In 2025, Airbnb quietly hid unique categories from its app. This tool brings them back.
 
-**~1,195 listings** across the United States (treehouses + A-frames).
+- **`/`** — V2 category searcher (pick vibes → place/dates → open Airbnb)
+- **`/v1`** — Original curated US catalog (treehouses + A-frames)
+
+We don't host bookings; searches and listing cards open official Airbnb pages.
 
 ## Stack
 
