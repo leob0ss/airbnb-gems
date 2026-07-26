@@ -29,9 +29,18 @@ export function initAnalytics(): void {
   posthog.identify(getVisitorId());
 }
 
+type TrackProperty =
+  | string
+  | number
+  | boolean
+  | null
+  | undefined
+  | string[]
+  | number[];
+
 export function track(
   event: string,
-  properties?: Record<string, string | number | boolean | null | undefined>,
+  properties?: Record<string, TrackProperty>,
 ): void {
   if (!POSTHOG_KEY) return;
   posthog.capture(event, properties);

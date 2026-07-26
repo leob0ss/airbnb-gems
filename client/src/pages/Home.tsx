@@ -7,6 +7,7 @@ import {
 } from "@/lib/airbnbSearch";
 import { track } from "@/lib/analytics";
 import {
+  labelsForVibeKeys,
   loadPreviousSearches,
   savePreviousSearch,
   summarizeSearch,
@@ -14,7 +15,7 @@ import {
 } from "@/lib/searchHistory";
 import { getVisitorId } from "@/lib/visitorId";
 import { ALL_VIBES, vibeKey } from "@/lib/vibes";
-import { format } from "date-fns";
+import { differenceInCalendarDays, format } from "date-fns";
 import {
   ChevronDown,
   ChevronLeft,
@@ -424,10 +425,40 @@ export default function Home() {
               rel="noopener noreferrer"
               onClick={() => {
                 persistCurrentSearch();
-                track("vibe_search_opened", {
-                  vibe_count: selectedCount,
+                const categories = labelsForVibeKeys(Array.from(selected));
+                const checkin = range?.from
+                  ? format(range.from, "yyyy-MM-dd")
+                  : undefined;
+                const checkout = range?.to
+                  ? format(range.to, "yyyy-MM-dd")
+                  : undefined;
+                const adults = guests ? Number(guests) : undefined;
+                const max = priceMax ? Number(priceMax) : undefined;
+                const tripNights =
+                  range?.from && range?.to
+                    ? differenceInCalendarDays(range.to, range.from)
+                    : undefined;
+                track("airbnb_search_opened", {
+                  categories,
+                  category_count: categories.length,
+                  place: place.trim() || undefined,
                   has_place: Boolean(place.trim()),
-                  has_dates: Boolean(range?.from),
+                  has_dates: Boolean(range?.from && range?.to),
+                  checkin,
+                  checkout,
+                  trip_nights:
+                    tripNights != null && tripNights > 0
+                      ? tripNights
+                      : undefined,
+                  guests:
+                    Number.isFinite(adults) && adults! > 0
+                      ? adults
+                      : undefined,
+                  has_price_max: Boolean(
+                    Number.isFinite(max) && max! > 0,
+                  ),
+                  price_max:
+                    Number.isFinite(max) && max! > 0 ? max : undefined,
                 });
                 try {
                   sessionStorage.setItem(PENDING_RESET_KEY, "1");
@@ -484,8 +515,8 @@ export default function Home() {
                   label={vibe.label}
                   onClick={() => {
                     setSelected((prev) => toggleVibeKey(prev, vibe));
-                    track("vibe_toggled", {
-                      vibe: vibe.label,
+                    track("category_toggled", {
+                      category: vibe.label,
                       selected: !selected.has(key),
                     });
                   }}
@@ -522,8 +553,18 @@ export default function Home() {
                         rel="noopener noreferrer"
                         onClick={() => {
                           track("previous_search_opened", {
-                            vibe_count: search.vibeKeys.length,
+                            categories: search.vibeLabels,
+                            category_count: search.vibeLabels.length,
+                            place: search.place.trim() || undefined,
                             has_place: Boolean(search.place.trim()),
+                            has_dates: Boolean(
+                              search.checkin && search.checkout,
+                            ),
+                            checkin: search.checkin,
+                            checkout: search.checkout,
+                            guests: search.guests,
+                            has_price_max: Boolean(search.priceMax),
+                            price_max: search.priceMax,
                           });
                         }}
                         className="flex items-start gap-3 py-3.5 transition-colors hover:bg-[#F7F7F7]"
@@ -571,7 +612,10 @@ export default function Home() {
             type="button"
             disabled={!canContinue}
             onClick={() => {
-              track("vibe_continue", { vibe_count: selectedCount });
+              track("category_continue", {
+                categories: labelsForVibeKeys(Array.from(selected)),
+                category_count: selectedCount,
+              });
               setStep("search");
             }}
             className={[
