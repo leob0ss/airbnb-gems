@@ -1,3 +1,4 @@
+import MissingFilterModal from "@/components/MissingFilterModal";
 import {
   buildAirbnbSearchUrl,
   searchPlaces,
@@ -11,6 +12,7 @@ import {
   summarizeSearch,
   type PreviousSearch,
 } from "@/lib/searchHistory";
+import { getVisitorId } from "@/lib/visitorId";
 import { ALL_VIBES, vibeKey } from "@/lib/vibes";
 import { format } from "date-fns";
 import {
@@ -270,6 +272,8 @@ export default function Home() {
   const [previousSearches, setPreviousSearches] = useState<PreviousSearch[]>(
     [],
   );
+  const [showCategoryRequest, setShowCategoryRequest] = useState(false);
+  const visitorId = useMemo(() => getVisitorId(), []);
 
   const selectedCount = selected.size;
   const canContinue = selectedCount > 0;
@@ -488,6 +492,15 @@ export default function Home() {
                 />
               );
             })}
+            <VibeTile
+              active={false}
+              icon="/icons/other.svg"
+              label="Other"
+              onClick={() => {
+                track("other_clicked");
+                setShowCategoryRequest(true);
+              }}
+            />
           </div>
 
           {previousSearches.length > 0 && (
@@ -572,6 +585,14 @@ export default function Home() {
           </button>
         </div>
       </div>
+
+      {showCategoryRequest && (
+        <MissingFilterModal
+          visitorId={visitorId}
+          eyebrow="Request a category"
+          onClose={() => setShowCategoryRequest(false)}
+        />
+      )}
     </div>
   );
 }

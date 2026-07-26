@@ -1,5 +1,5 @@
 /**
- * MissingFilterModal — shown when a user clicks "Missing your filter?"
+ * MissingFilterModal — request a missing filter / category.
  *
  * Asks:
  *   1. "What are you looking for?" (required, free text)
@@ -14,6 +14,8 @@ import { useRef, useState } from "react";
 interface MissingFilterModalProps {
   visitorId: string;
   onClose: () => void;
+  /** Small label above the title. */
+  eyebrow?: string;
 }
 
 type Step = "form" | "thanks";
@@ -21,6 +23,7 @@ type Step = "form" | "thanks";
 export default function MissingFilterModal({
   visitorId,
   onClose,
+  eyebrow = "Missing your filter?",
 }: MissingFilterModalProps) {
   const [step, setStep] = useState<Step>("form");
   const [whatLookingFor, setWhatLookingFor] = useState("");
@@ -102,7 +105,7 @@ export default function MissingFilterModal({
         <div className="flex items-start justify-between gap-3">
           <div>
             <p className="text-xs font-semibold uppercase tracking-widest text-background/50 mb-1">
-              Missing your filter?
+              {eyebrow}
             </p>
             <h2 className="text-lg font-semibold leading-snug">
               {step === "form"
@@ -130,7 +133,7 @@ export default function MissingFilterModal({
                 ref={inputRef}
                 value={whatLookingFor}
                 onChange={(e) => setWhatLookingFor(e.target.value)}
-                placeholder="e.g. Yurts in Colorado, cave houses, floating homes…"
+                placeholder="e.g. Floating homes, windmills, tiny houses…"
                 rows={3}
                 maxLength={1000}
                 required
