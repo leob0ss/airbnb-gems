@@ -5,14 +5,28 @@ import {
   type PlaceSuggestion,
 } from "@/lib/airbnbSearch";
 import { track } from "@/lib/analytics";
+import {
+  loadPreviousSearches,
+  savePreviousSearch,
+  summarizeSearch,
+  type PreviousSearch,
+} from "@/lib/searchHistory";
 import { ALL_VIBES, vibeKey } from "@/lib/vibes";
 import { format } from "date-fns";
-import { ChevronDown, ChevronLeft, MapPin, Search } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronLeft,
+  Clock,
+  MapPin,
+  Search,
+} from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { DateRange } from "react-day-picker";
 import { DayPicker } from "react-day-picker";
 import "react-day-picker/style.css";
 import { Link } from "wouter";
+
+const PENDING_RESET_KEY = "ag_pending_search_reset";
 
 type Step = "vibe" | "search";
 
@@ -254,6 +268,9 @@ export default function Home() {
   const [range, setRange] = useState<DateRange | undefined>();
   const [guests, setGuests] = useState("");
   const [priceMax, setPriceMax] = useState("");
+  const [previousSearches, setPreviousSearches] = useState<PreviousSearch[]>(
+    [],
+  );
 
   const selectedCount = selected.size;
   const canContinue = selectedCount > 0;
@@ -274,6 +291,65 @@ export default function Home() {
       selectedKeys: Array.from(selected),
     });
   }, [place, range, guests, priceMax, selected]);
+
+  function resetToHomepage() {
+    setStep("vibe");
+    setSelected(new Set());
+    setPlace("");
+    setRange(undefined);
+    setGuests("");
+    setPriceMax("");
+  }
+
+  function persistCurrentSearch() {
+    const checkin = range?.from
+      ? format(range.from, "yyyy-MM-dd")
+      : undefined;
+    const checkout = range?.to ? format(range.to, "yyyy-MM-dd") : undefined;
+    const adults = guests ? Number(guests) : undefined;
+    const max = priceMax ? Number(priceMax) : undefined;
+    const next = savePreviousSearch({
+      url: searchUrl,
+      vibeKeys: Array.from(selected),
+      place,
+      checkin,
+      checkout,
+      guests: Number.isFinite(adults) && adults! > 0 ? adults : undefined,
+      priceMax: Number.isFinite(max) && max! > 0 ? max : undefined,
+    });
+    setPreviousSearches(next);
+  }
+
+  useEffect(() => {
+    setPreviousSearches(loadPreviousSearches());
+
+    try {
+      if (sessionStorage.getItem(PENDING_RESET_KEY) === "1") {
+        sessionStorage.removeItem(PENDING_RESET_KEY);
+        resetToHomepage();
+        setPreviousSearches(loadPreviousSearches());
+      }
+    } catch {
+      /* private mode */
+    }
+
+    function onPageShow(e: PageTransitionEvent) {
+      if (!e.persisted) return;
+      try {
+        if (sessionStorage.getItem(PENDING_RESET_KEY) === "1") {
+          sessionStorage.removeItem(PENDING_RESET_KEY);
+          resetToHomepage();
+          setPreviousSearches(loadPreviousSearches());
+        }
+      } catch {
+        /* private mode */
+      }
+    }
+
+    window.addEventListener("pageshow", onPageShow);
+    return () => window.removeEventListener("pageshow", onPageShow);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- run once on mount / bfcache return
+  }, []);
 
   if (step === "search") {
     return (
@@ -344,11 +420,27 @@ export default function Home() {
               target="_blank"
               rel="noopener noreferrer"
               onClick={() => {
+                persistCurrentSearch();
                 track("vibe_search_opened", {
                   vibe_count: selectedCount,
                   has_place: Boolean(place.trim()),
                   has_dates: Boolean(range?.from),
                 });
+                try {
+                  sessionStorage.setItem(PENDING_RESET_KEY, "1");
+                } catch {
+                  /* private mode */
+                }
+                // New tab keeps this page open — reset immediately.
+                // Same-tab / bfcache return is handled via pageshow + PENDING_RESET_KEY.
+                window.setTimeout(() => {
+                  resetToHomepage();
+                  try {
+                    sessionStorage.removeItem(PENDING_RESET_KEY);
+                  } catch {
+                    /* private mode */
+                  }
+                }, 0);
               }}
               className="flex h-14 items-center justify-center gap-2 rounded-xl bg-[#FF385C] text-[16px] font-medium text-white transition-colors duration-200 hover:bg-[#E31C5F]"
             >
@@ -400,6 +492,61 @@ export default function Home() {
               );
             })}
           </div>
+
+          {previousSearches.length > 0 && (
+            <section className="mt-12 pb-4">
+              <div className="mb-4 flex items-center gap-2">
+                <Clock className="h-4 w-4 text-[#717171]" strokeWidth={2} />
+                <h2 className="text-[15px] font-semibold text-[#222]">
+                  Previous searches
+                </h2>
+              </div>
+              <ul className="divide-y divide-[#EBEBEB] border-y border-[#EBEBEB]">
+                {previousSearches.map((search) => {
+                  const summary = summarizeSearch(search);
+                  return (
+                    <li key={search.id}>
+                      <a
+                        href={search.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={() => {
+                          track("previous_search_opened", {
+                            vibe_count: search.vibeKeys.length,
+                            has_place: Boolean(search.place.trim()),
+                          });
+                        }}
+                        className="flex items-start gap-3 py-3.5 transition-colors hover:bg-[#F7F7F7]"
+                      >
+                        <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#F7F7F7]">
+                          <Search
+                            className="h-4 w-4 text-[#222]"
+                            strokeWidth={2.5}
+                          />
+                        </span>
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate text-[14px] font-medium text-[#222]">
+                            {search.vibeLabels.length
+                              ? search.vibeLabels.join(" · ")
+                              : "Airbnb search"}
+                          </span>
+                          {summary ? (
+                            <span className="mt-0.5 block truncate text-[13px] text-[#717171]">
+                              {summary}
+                            </span>
+                          ) : (
+                            <span className="mt-0.5 block text-[13px] text-[#B0B0B0]">
+                              Anywhere · Any dates
+                            </span>
+                          )}
+                        </span>
+                      </a>
+                    </li>
+                  );
+                })}
+              </ul>
+            </section>
+          )}
         </main>
       </div>
 
