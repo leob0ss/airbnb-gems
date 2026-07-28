@@ -18,8 +18,12 @@ export function initAnalytics(): void {
   posthog.init(POSTHOG_KEY, {
     api_host: POSTHOG_HOST,
     person_profiles: "identified_only",
+    // Pageviews for Web Analytics; custom track() for product signals.
+    // Autocapture off to avoid duplicate click events (e.g. "clicked Continue"
+    // alongside category_continue).
     capture_pageview: true,
     capture_pageleave: true,
+    autocapture: false,
   });
 
   posthog.identify(getVisitorId());
