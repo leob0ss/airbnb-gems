@@ -10,7 +10,7 @@
  */
 import { track } from "@/lib/analytics";
 import { X } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 
 interface SurveyBannerProps {
   visitorId: string;
@@ -33,7 +33,6 @@ export default function SurveyBanner({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
   const [submitted, setSubmitted] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
 
   async function postSurvey(followup: string | null) {
     if (!answer) return;
@@ -80,12 +79,6 @@ export default function SurveyBanner({
       setIsSubmitting(false);
     }
   }
-
-  useEffect(() => {
-    if (step === "followup") {
-      setTimeout(() => inputRef.current?.focus(), 50);
-    }
-  }, [step]);
 
   useEffect(() => {
     if (step === "thanks") {
@@ -165,7 +158,6 @@ export default function SurveyBanner({
           <>
             <div className="flex gap-2">
               <input
-                ref={inputRef}
                 type="text"
                 value={followupText}
                 onChange={(e) => setFollowupText(e.target.value)}

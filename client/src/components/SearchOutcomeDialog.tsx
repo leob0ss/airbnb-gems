@@ -5,7 +5,7 @@
  */
 import { track } from "@/lib/analytics";
 import { X } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 
 export type SearchOutcome = "yes" | "still_looking" | "no";
 
@@ -27,14 +27,6 @@ export default function SearchOutcomeDialog({
   const [step, setStep] = useState<"question" | "followup">("question");
   const [lookingFor, setLookingFor] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    if (step === "followup") {
-      const t = setTimeout(() => inputRef.current?.focus(), 50);
-      return () => clearTimeout(t);
-    }
-  }, [step]);
 
   async function finish(answer: SearchOutcome, followup: string | null) {
     if (isSubmitting) return;
@@ -127,7 +119,6 @@ export default function SearchOutcomeDialog({
         {step === "followup" && (
           <div className="flex gap-2">
             <input
-              ref={inputRef}
               type="text"
               value={lookingFor}
               onChange={(e) => setLookingFor(e.target.value)}

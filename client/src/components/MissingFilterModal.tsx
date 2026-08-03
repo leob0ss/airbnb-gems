@@ -9,7 +9,7 @@
  */
 import { track } from "@/lib/analytics";
 import { X } from "lucide-react";
-import { useRef, useState } from "react";
+import { useState } from "react";
 
 interface MissingFilterModalProps {
   visitorId: string;
@@ -31,7 +31,6 @@ export default function MissingFilterModal({
   const [emailError, setEmailError] = useState("");
   const [submitError, setSubmitError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const inputRef = useRef<HTMLTextAreaElement>(null);
 
   function validateEmail(val: string) {
     if (!val) return ""; // optional
@@ -130,14 +129,12 @@ export default function MissingFilterModal({
                 What are you looking for?
               </label>
               <textarea
-                ref={inputRef}
                 value={whatLookingFor}
                 onChange={(e) => setWhatLookingFor(e.target.value)}
                 placeholder="e.g. Floating homes, windmills, tiny houses…"
                 rows={3}
                 maxLength={1000}
                 required
-                autoFocus
                 className="bg-background/15 text-background placeholder:text-background/40 rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-background/40 resize-none"
               />
             </div>

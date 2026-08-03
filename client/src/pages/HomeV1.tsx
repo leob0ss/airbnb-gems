@@ -334,7 +334,6 @@ function ContactModal({ onClose }: { onClose: () => void }) {
                   rows={4}
                   maxLength={2000}
                   required
-                  autoFocus
                   className="bg-secondary text-foreground placeholder:text-muted-foreground rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-foreground/20 resize-none border border-border"
                 />
               </div>
