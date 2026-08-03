@@ -1,9 +1,11 @@
 /**
  * Lightweight post-search outcome prompt.
  * Shown after "Search on Airbnb" so returning users can tap an answer.
+ * "No" asks a short follow-up: what were you looking for?
  */
 import { track } from "@/lib/analytics";
 import { X } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 
 export type SearchOutcome = "yes" | "still_looking" | "no";
 
@@ -20,12 +22,40 @@ const OPTIONS: { value: SearchOutcome; label: string }[] = [
 export default function SearchOutcomeDialog({
   onClose,
 }: SearchOutcomeDialogProps) {
-  function handleAnswer(answer: SearchOutcome) {
-    track("search_outcome", { answer });
+  const [step, setStep] = useState<"question" | "followup">("question");
+  const [lookingFor, setLookingFor] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (step === "followup") {
+      const t = setTimeout(() => inputRef.current?.focus(), 50);
+      return () => clearTimeout(t);
+    }
+  }, [step]);
+
+  function finish(answer: SearchOutcome, followup: string | null) {
+    const trimmed = followup?.trim() || null;
+    track("search_outcome", {
+      answer,
+      has_followup: Boolean(trimmed),
+      looking_for: trimmed || undefined,
+    });
     onClose();
   }
 
+  function handleAnswer(answer: SearchOutcome) {
+    if (answer === "no") {
+      setStep("followup");
+      return;
+    }
+    finish(answer, null);
+  }
+
   function handleDismiss() {
+    if (step === "followup") {
+      finish("no", null);
+      return;
+    }
     track("search_outcome_dismissed");
     onClose();
   }
@@ -42,7 +72,9 @@ export default function SearchOutcomeDialog({
             id="search-outcome-title"
             className="text-sm font-semibold leading-snug"
           >
-            Did you find a place you&apos;re excited about?
+            {step === "question"
+              ? "Did you find a place you're excited about?"
+              : "What were you looking for?"}
           </p>
           <button
             type="button"
@@ -54,18 +86,52 @@ export default function SearchOutcomeDialog({
           </button>
         </div>
 
-        <div className="flex flex-col gap-2 sm:flex-row">
-          {OPTIONS.map((opt) => (
+        {step === "question" && (
+          <div className="flex flex-col gap-2 sm:flex-row">
+            {OPTIONS.map((opt) => (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => handleAnswer(opt.value)}
+                className="flex-1 rounded-xl bg-background py-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-background/90"
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {step === "followup" && (
+          <div className="flex gap-2">
+            <input
+              ref={inputRef}
+              type="text"
+              value={lookingFor}
+              onChange={(e) => setLookingFor(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") finish("no", lookingFor);
+                if (e.key === "Escape") finish("no", null);
+              }}
+              placeholder="Type your answer…"
+              maxLength={500}
+              className="flex-1 rounded-xl bg-background/15 px-3 py-2 text-sm text-background outline-none placeholder:text-background/50 focus:ring-2 focus:ring-background/40"
+            />
             <button
-              key={opt.value}
               type="button"
-              onClick={() => handleAnswer(opt.value)}
-              className="flex-1 rounded-xl bg-background py-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-background/90"
+              onClick={() => finish("no", lookingFor)}
+              className="rounded-xl bg-background px-4 py-2 text-sm font-semibold text-foreground transition-colors hover:bg-background/90"
             >
-              {opt.label}
+              Send
             </button>
-          ))}
-        </div>
+            <button
+              type="button"
+              onClick={() => finish("no", null)}
+              className="rounded-xl bg-background/20 px-3 py-2 text-sm font-semibold text-background transition-colors hover:bg-background/30"
+            >
+              Skip
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
