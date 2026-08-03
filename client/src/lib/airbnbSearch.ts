@@ -1,13 +1,33 @@
 import { EXTRA_VIBES, type Vibe, vibeKey } from "./vibes";
 
+/** Airbnb's default undated search night count for price filters. */
+export const DEFAULT_PRICE_FILTER_NIGHTS = 5;
+
 export type AirbnbSearchParams = {
   place?: string;
   checkin?: string; // YYYY-MM-DD
   checkout?: string;
   adults?: number;
+  /** Max price per night (converted to stay total for Airbnb's URL). */
   priceMax?: number;
   selectedKeys: string[]; // vibeKey values
 };
+
+/** Nights used for Airbnb price_max (stay total = nightly × nights). */
+export function priceFilterNights(
+  checkin?: string,
+  checkout?: string,
+): number {
+  if (checkin && checkout) {
+    const start = Date.parse(checkin);
+    const end = Date.parse(checkout);
+    if (Number.isFinite(start) && Number.isFinite(end) && end > start) {
+      const nights = Math.round((end - start) / (24 * 60 * 60 * 1000));
+      if (nights > 0) return nights;
+    }
+  }
+  return DEFAULT_PRICE_FILTER_NIGHTS;
+}
 
 /** Build an Airbnb search URL with hidden category / amenity filters. */
 export function buildAirbnbSearchUrl(params: AirbnbSearchParams): string {
@@ -24,9 +44,12 @@ export function buildAirbnbSearchUrl(params: AirbnbSearchParams): string {
     qs.set("adults", String(params.adults));
   }
   if (params.priceMax && params.priceMax > 0) {
-    qs.set("price_filter_input_type", "2");
-    qs.set("price_filter_num_nights", "7");
-    qs.set("price_max", String(params.priceMax));
+    const nights = priceFilterNights(params.checkin, params.checkout);
+    // Airbnb's price_max is a stay total, not a nightly rate.
+    const totalMax = Math.round(params.priceMax * nights);
+    qs.set("price_filter_input_type", "0");
+    qs.set("price_filter_num_nights", String(nights));
+    qs.set("price_max", String(totalMax));
   }
 
   const order: string[] = [];

@@ -423,67 +423,73 @@ export default function Home() {
   if (step === "search") {
     return (
       <div className="min-h-screen bg-white text-[#222]">
-        <main className="mx-auto w-full max-w-3xl px-6">
-          <div className="mx-auto flex max-w-md flex-col gap-6 pt-12 pb-16">
-            <button
-              type="button"
-              onClick={() => setStep("vibe")}
-              className="flex items-center gap-1.5 self-start text-[14px] font-medium text-[#222]"
-            >
-              <ChevronLeft className="h-4 w-4" strokeWidth={2.5} />
-              Categories
-            </button>
+        <div className="pb-40">
+          <main className="mx-auto w-full max-w-3xl px-6">
+            <div className="mx-auto flex max-w-md flex-col gap-6 pt-12 pb-8">
+              <button
+                type="button"
+                onClick={() => setStep("vibe")}
+                className="flex items-center gap-1.5 self-start text-[14px] font-medium text-[#222]"
+              >
+                <ChevronLeft className="h-4 w-4" strokeWidth={2.5} />
+                Categories
+              </button>
 
-            <div className="flex flex-col gap-5">
-              <div>
-                <label className="mb-2 block text-[15px] font-semibold text-[#222]">
-                  Where
-                </label>
-                <PlaceInput value={place} onChange={setPlace} />
-                <p className="mt-1.5 text-[13px] text-[#B0B0B0]">
-                  Leave empty to search everywhere.
-                </p>
-              </div>
-
-              <div>
-                <label className="mb-2 block text-[15px] font-semibold text-[#222]">
-                  When
-                </label>
-                <WhenPicker range={range} onChange={setRange} />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
+              <div className="flex flex-col gap-5">
                 <div>
                   <label className="mb-2 block text-[15px] font-semibold text-[#222]">
-                    Guests
+                    Where
                   </label>
-                  <input
-                    type="number"
-                    min={0}
-                    inputMode="numeric"
-                    placeholder="Any"
-                    value={guests}
-                    onChange={(e) => setGuests(e.target.value)}
-                    className="w-full rounded-xl border border-[#DDDDDD] bg-white px-4 py-3.5 text-[16px] text-[#222] outline-none transition-colors placeholder:text-[#B0B0B0] focus:border-[#222]"
-                  />
+                  <PlaceInput value={place} onChange={setPlace} />
+                  <p className="mt-1.5 text-[13px] text-[#B0B0B0]">
+                    Leave empty to search everywhere.
+                  </p>
                 </div>
+
                 <div>
                   <label className="mb-2 block text-[15px] font-semibold text-[#222]">
-                    Max / night
+                    When
                   </label>
-                  <input
-                    type="number"
-                    min={0}
-                    inputMode="numeric"
-                    placeholder="Any"
-                    value={priceMax}
-                    onChange={(e) => setPriceMax(e.target.value)}
-                    className="w-full rounded-xl border border-[#DDDDDD] bg-white px-4 py-3.5 text-[16px] text-[#222] outline-none transition-colors placeholder:text-[#B0B0B0] focus:border-[#222]"
-                  />
+                  <WhenPicker range={range} onChange={setRange} />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="mb-2 block text-[15px] font-semibold text-[#222]">
+                      Guests
+                    </label>
+                    <input
+                      type="number"
+                      min={0}
+                      inputMode="numeric"
+                      placeholder="Any"
+                      value={guests}
+                      onChange={(e) => setGuests(e.target.value)}
+                      className="w-full rounded-xl border border-[#DDDDDD] bg-white px-4 py-3.5 text-[16px] text-[#222] outline-none transition-colors placeholder:text-[#B0B0B0] focus:border-[#222]"
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-2 block text-[15px] font-semibold text-[#222]">
+                      Max / night
+                    </label>
+                    <input
+                      type="number"
+                      min={0}
+                      inputMode="numeric"
+                      placeholder="Any"
+                      value={priceMax}
+                      onChange={(e) => setPriceMax(e.target.value)}
+                      className="w-full rounded-xl border border-[#DDDDDD] bg-white px-4 py-3.5 text-[16px] text-[#222] outline-none transition-colors placeholder:text-[#B0B0B0] focus:border-[#222]"
+                    />
+                  </div>
                 </div>
               </div>
             </div>
+          </main>
+        </div>
 
+        <div className="fixed inset-x-0 bottom-0 z-30 border-t border-[#EBEBEB] bg-white/95 backdrop-blur-sm">
+          <div className="mx-auto flex max-w-md flex-col gap-2 px-6 py-4">
             <a
               href={searchUrl}
               target="_blank"
@@ -543,7 +549,7 @@ export default function Home() {
                   }
                 }, 0);
               }}
-              className="flex h-14 items-center justify-center gap-2 rounded-xl bg-[#FF385C] text-[16px] font-medium text-white transition-colors duration-200 hover:bg-[#E31C5F]"
+              className="flex h-12 items-center justify-center gap-2 rounded-lg bg-[#FF385C] text-[16px] font-medium text-white transition-colors duration-200 hover:bg-[#E31C5F]"
             >
               <Search className="h-[18px] w-[18px]" strokeWidth={3} />
               Search on Airbnb
@@ -552,7 +558,7 @@ export default function Home() {
               You will be redirected to Airbnb next
             </p>
           </div>
-        </main>
+        </div>
       </div>
     );
   }
