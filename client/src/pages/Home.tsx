@@ -1,4 +1,5 @@
 import MissingFilterModal from "@/components/MissingFilterModal";
+import SearchOutcomeDialog from "@/components/SearchOutcomeDialog";
 import {
   buildAirbnbSearchUrl,
   searchPlaces,
@@ -29,6 +30,7 @@ import { DayPicker } from "react-day-picker";
 import "react-day-picker/style.css";
 
 const PENDING_RESET_KEY = "ag_pending_search_reset";
+const PENDING_OUTCOME_KEY = "ag_pending_search_outcome";
 
 type Step = "vibe" | "search";
 
@@ -274,7 +276,10 @@ export default function Home() {
     [],
   );
   const [showCategoryRequest, setShowCategoryRequest] = useState(false);
+  const [showSearchOutcome, setShowSearchOutcome] = useState(false);
   const visitorId = useMemo(() => getVisitorId(), []);
+  const leftForAirbnbRef = useRef(false);
+  const outcomeShownTrackedRef = useRef(false);
 
   const selectedCount = selected.size;
   const canContinue = selectedCount > 0;
@@ -324,6 +329,41 @@ export default function Home() {
     setPreviousSearches(next);
   }
 
+  function clearPendingOutcome() {
+    try {
+      sessionStorage.removeItem(PENDING_OUTCOME_KEY);
+    } catch {
+      /* private mode */
+    }
+    setShowSearchOutcome(false);
+    leftForAirbnbRef.current = false;
+    outcomeShownTrackedRef.current = false;
+  }
+
+  function markPendingOutcome() {
+    try {
+      sessionStorage.setItem(PENDING_OUTCOME_KEY, "1");
+    } catch {
+      /* private mode */
+    }
+    leftForAirbnbRef.current = false;
+    outcomeShownTrackedRef.current = false;
+  }
+
+  function tryShowOutcomeDialog() {
+    try {
+      if (sessionStorage.getItem(PENDING_OUTCOME_KEY) !== "1") return;
+    } catch {
+      return;
+    }
+    if (!leftForAirbnbRef.current) return;
+    setShowSearchOutcome(true);
+    if (!outcomeShownTrackedRef.current) {
+      outcomeShownTrackedRef.current = true;
+      track("search_outcome_shown");
+    }
+  }
+
   useEffect(() => {
     setPreviousSearches(loadPreviousSearches());
 
@@ -332,6 +372,11 @@ export default function Home() {
         sessionStorage.removeItem(PENDING_RESET_KEY);
         resetToHomepage();
         setPreviousSearches(loadPreviousSearches());
+      }
+      // Returning visitor with an unanswered post-search prompt
+      if (sessionStorage.getItem(PENDING_OUTCOME_KEY) === "1") {
+        leftForAirbnbRef.current = true;
+        tryShowOutcomeDialog();
       }
     } catch {
       /* private mode */
@@ -348,11 +393,31 @@ export default function Home() {
       } catch {
         /* private mode */
       }
+      leftForAirbnbRef.current = true;
+      tryShowOutcomeDialog();
+    }
+
+    function onVisibilityChange() {
+      if (document.visibilityState === "hidden") {
+        leftForAirbnbRef.current = true;
+        return;
+      }
+      tryShowOutcomeDialog();
+    }
+
+    function onWindowFocus() {
+      tryShowOutcomeDialog();
     }
 
     window.addEventListener("pageshow", onPageShow);
-    return () => window.removeEventListener("pageshow", onPageShow);
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- run once on mount / bfcache return
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    window.addEventListener("focus", onWindowFocus);
+    return () => {
+      window.removeEventListener("pageshow", onPageShow);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+      window.removeEventListener("focus", onWindowFocus);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- run once on mount / return
   }, []);
 
   if (step === "search") {
@@ -465,8 +530,10 @@ export default function Home() {
                 } catch {
                   /* private mode */
                 }
+                markPendingOutcome();
                 // New tab keeps this page open — reset immediately.
                 // Same-tab / bfcache return is handled via pageshow + PENDING_RESET_KEY.
+                // Outcome dialog shows when the user returns (tab focus / visibility).
                 window.setTimeout(() => {
                   resetToHomepage();
                   try {
@@ -636,6 +703,10 @@ export default function Home() {
           eyebrow="Request a category"
           onClose={() => setShowCategoryRequest(false)}
         />
+      )}
+
+      {showSearchOutcome && (
+        <SearchOutcomeDialog onClose={clearPendingOutcome} />
       )}
     </div>
   );
