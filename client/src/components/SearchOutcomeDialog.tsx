@@ -10,6 +10,7 @@ import { useEffect, useRef, useState } from "react";
 export type SearchOutcome = "yes" | "still_looking" | "no";
 
 interface SearchOutcomeDialogProps {
+  visitorId: string;
   onClose: () => void;
 }
 
@@ -20,10 +21,12 @@ const OPTIONS: { value: SearchOutcome; label: string }[] = [
 ];
 
 export default function SearchOutcomeDialog({
+  visitorId,
   onClose,
 }: SearchOutcomeDialogProps) {
   const [step, setStep] = useState<"question" | "followup">("question");
   const [lookingFor, setLookingFor] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -33,13 +36,31 @@ export default function SearchOutcomeDialog({
     }
   }, [step]);
 
-  function finish(answer: SearchOutcome, followup: string | null) {
+  async function finish(answer: SearchOutcome, followup: string | null) {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+
     const trimmed = followup?.trim() || null;
     track("search_outcome", {
       answer,
       has_followup: Boolean(trimmed),
       looking_for: trimmed || undefined,
     });
+
+    try {
+      await fetch("/api/search-outcome", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          answer,
+          lookingFor: trimmed,
+          visitorId,
+        }),
+      });
+    } catch {
+      /* email notify is best-effort; PostHog already recorded */
+    }
+
     onClose();
   }
 
@@ -48,12 +69,12 @@ export default function SearchOutcomeDialog({
       setStep("followup");
       return;
     }
-    finish(answer, null);
+    void finish(answer, null);
   }
 
   function handleDismiss() {
     if (step === "followup") {
-      finish("no", null);
+      void finish("no", null);
       return;
     }
     track("search_outcome_dismissed");
@@ -80,7 +101,8 @@ export default function SearchOutcomeDialog({
             type="button"
             onClick={handleDismiss}
             aria-label="Dismiss"
-            className="mt-0.5 flex-shrink-0 opacity-60 transition-opacity hover:opacity-100"
+            disabled={isSubmitting}
+            className="mt-0.5 flex-shrink-0 opacity-60 transition-opacity hover:opacity-100 disabled:opacity-40"
           >
             <X className="h-4 w-4" />
           </button>
@@ -93,7 +115,8 @@ export default function SearchOutcomeDialog({
                 key={opt.value}
                 type="button"
                 onClick={() => handleAnswer(opt.value)}
-                className="flex-1 rounded-xl bg-background py-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-background/90"
+                disabled={isSubmitting}
+                className="flex-1 rounded-xl bg-background py-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-background/90 disabled:opacity-50"
               >
                 {opt.label}
               </button>
@@ -109,26 +132,21 @@ export default function SearchOutcomeDialog({
               value={lookingFor}
               onChange={(e) => setLookingFor(e.target.value)}
               onKeyDown={(e) => {
-                if (e.key === "Enter") finish("no", lookingFor);
-                if (e.key === "Escape") finish("no", null);
+                if (e.key === "Enter") void finish("no", lookingFor);
+                if (e.key === "Escape") void finish("no", null);
               }}
               placeholder="Type your answer…"
               maxLength={500}
-              className="flex-1 rounded-xl bg-background/15 px-3 py-2 text-sm text-background outline-none placeholder:text-background/50 focus:ring-2 focus:ring-background/40"
+              disabled={isSubmitting}
+              className="flex-1 rounded-xl bg-background/15 px-3 py-2 text-sm text-background outline-none placeholder:text-background/50 focus:ring-2 focus:ring-background/40 disabled:opacity-50"
             />
             <button
               type="button"
-              onClick={() => finish("no", lookingFor)}
-              className="rounded-xl bg-background px-4 py-2 text-sm font-semibold text-foreground transition-colors hover:bg-background/90"
+              onClick={() => void finish("no", lookingFor)}
+              disabled={isSubmitting || !lookingFor.trim()}
+              className="rounded-xl bg-background px-4 py-2 text-sm font-semibold text-foreground transition-colors hover:bg-background/90 disabled:opacity-40"
             >
-              Send
-            </button>
-            <button
-              type="button"
-              onClick={() => finish("no", null)}
-              className="rounded-xl bg-background/20 px-3 py-2 text-sm font-semibold text-background transition-colors hover:bg-background/30"
-            >
-              Skip
+              {isSubmitting ? "…" : "Send"}
             </button>
           </div>
         )}

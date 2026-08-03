@@ -4,6 +4,7 @@ import { createServer } from "http";
 import net from "net";
 import { handleContactRequest } from "../contact/http";
 import { handleFilterRequestRequest } from "../filterRequest/http";
+import { handleSearchOutcomeRequest } from "../searchOutcome/http";
 import { handleSurveyRequest } from "../survey/http";
 import { handlePaywallRequest } from "../paywall/http";
 import { setupVite, serveStatic } from "./vite";
@@ -59,6 +60,18 @@ async function startServer() {
   app.post("/api/survey", async (req, res) => {
     const response = await handleSurveyRequest(
       new Request(`${req.protocol}://${req.get("host")}/api/survey`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(req.body),
+      }),
+    );
+    const data = await response.json();
+    res.status(response.status).json(data);
+  });
+
+  app.post("/api/search-outcome", async (req, res) => {
+    const response = await handleSearchOutcomeRequest(
+      new Request(`${req.protocol}://${req.get("host")}/api/search-outcome`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(req.body),

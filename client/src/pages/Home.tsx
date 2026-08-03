@@ -706,7 +706,10 @@ export default function Home() {
       )}
 
       {showSearchOutcome && (
-        <SearchOutcomeDialog onClose={clearPendingOutcome} />
+        <SearchOutcomeDialog
+          visitorId={visitorId}
+          onClose={clearPendingOutcome}
+        />
       )}
     </div>
   );
