@@ -271,7 +271,6 @@ export default function Home() {
   const [place, setPlace] = useState("");
   const [range, setRange] = useState<DateRange | undefined>();
   const [guests, setGuests] = useState("");
-  const [priceMax, setPriceMax] = useState("");
   const [previousSearches, setPreviousSearches] = useState<PreviousSearch[]>(
     [],
   );
@@ -290,16 +289,14 @@ export default function Home() {
       : undefined;
     const checkout = range?.to ? format(range.to, "yyyy-MM-dd") : undefined;
     const adults = guests ? Number(guests) : undefined;
-    const max = priceMax ? Number(priceMax) : undefined;
     return buildAirbnbSearchUrl({
       place,
       checkin,
       checkout,
       adults: Number.isFinite(adults) ? adults : undefined,
-      priceMax: Number.isFinite(max) ? max : undefined,
       selectedKeys: Array.from(selected),
     });
-  }, [place, range, guests, priceMax, selected]);
+  }, [place, range, guests, selected]);
 
   function resetToHomepage() {
     setStep("vibe");
@@ -307,7 +304,6 @@ export default function Home() {
     setPlace("");
     setRange(undefined);
     setGuests("");
-    setPriceMax("");
   }
 
   function persistCurrentSearch() {
@@ -316,7 +312,6 @@ export default function Home() {
       : undefined;
     const checkout = range?.to ? format(range.to, "yyyy-MM-dd") : undefined;
     const adults = guests ? Number(guests) : undefined;
-    const max = priceMax ? Number(priceMax) : undefined;
     const next = savePreviousSearch({
       url: searchUrl,
       vibeKeys: Array.from(selected),
@@ -324,7 +319,6 @@ export default function Home() {
       checkin,
       checkout,
       guests: Number.isFinite(adults) && adults! > 0 ? adults : undefined,
-      priceMax: Number.isFinite(max) && max! > 0 ? max : undefined,
     });
     setPreviousSearches(next);
   }
@@ -453,35 +447,19 @@ export default function Home() {
                   <WhenPicker range={range} onChange={setRange} />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="mb-2 block text-[15px] font-semibold text-[#222]">
-                      Guests
-                    </label>
-                    <input
-                      type="number"
-                      min={0}
-                      inputMode="numeric"
-                      placeholder="Any"
-                      value={guests}
-                      onChange={(e) => setGuests(e.target.value)}
-                      className="w-full rounded-xl border border-[#DDDDDD] bg-white px-4 py-3.5 text-[16px] text-[#222] outline-none transition-colors placeholder:text-[#B0B0B0] focus:border-[#222]"
-                    />
-                  </div>
-                  <div>
-                    <label className="mb-2 block text-[15px] font-semibold text-[#222]">
-                      Max / night
-                    </label>
-                    <input
-                      type="number"
-                      min={0}
-                      inputMode="numeric"
-                      placeholder="Any"
-                      value={priceMax}
-                      onChange={(e) => setPriceMax(e.target.value)}
-                      className="w-full rounded-xl border border-[#DDDDDD] bg-white px-4 py-3.5 text-[16px] text-[#222] outline-none transition-colors placeholder:text-[#B0B0B0] focus:border-[#222]"
-                    />
-                  </div>
+                <div>
+                  <label className="mb-2 block text-[15px] font-semibold text-[#222]">
+                    Guests
+                  </label>
+                  <input
+                    type="number"
+                    min={0}
+                    inputMode="numeric"
+                    placeholder="Any"
+                    value={guests}
+                    onChange={(e) => setGuests(e.target.value)}
+                    className="w-full rounded-xl border border-[#DDDDDD] bg-white px-4 py-3.5 text-[16px] text-[#222] outline-none transition-colors placeholder:text-[#B0B0B0] focus:border-[#222]"
+                  />
                 </div>
               </div>
             </div>
@@ -504,7 +482,6 @@ export default function Home() {
                   ? format(range.to, "yyyy-MM-dd")
                   : undefined;
                 const adults = guests ? Number(guests) : undefined;
-                const max = priceMax ? Number(priceMax) : undefined;
                 const tripNights =
                   range?.from && range?.to
                     ? differenceInCalendarDays(range.to, range.from)
@@ -525,11 +502,6 @@ export default function Home() {
                     Number.isFinite(adults) && adults! > 0
                       ? adults
                       : undefined,
-                  has_price_max: Boolean(
-                    Number.isFinite(max) && max! > 0,
-                  ),
-                  price_max:
-                    Number.isFinite(max) && max! > 0 ? max : undefined,
                 });
                 try {
                   sessionStorage.setItem(PENDING_RESET_KEY, "1");
@@ -636,8 +608,6 @@ export default function Home() {
                             checkin: search.checkin,
                             checkout: search.checkout,
                             guests: search.guests,
-                            has_price_max: Boolean(search.priceMax),
-                            price_max: search.priceMax,
                           });
                         }}
                         className="flex items-start gap-3 py-3.5 transition-colors hover:bg-[#F7F7F7]"
