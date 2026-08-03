@@ -15,9 +15,9 @@ interface SearchOutcomeDialogProps {
 }
 
 const OPTIONS: { value: SearchOutcome; label: string }[] = [
-  { value: "yes", label: "Yes" },
-  { value: "still_looking", label: "Still looking" },
-  { value: "no", label: "No" },
+  { value: "yes", label: "👍 Yes" },
+  { value: "still_looking", label: "👀 Still looking" },
+  { value: "no", label: "👎 No" },
 ];
 
 export default function SearchOutcomeDialog({
