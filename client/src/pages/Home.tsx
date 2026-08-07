@@ -8,6 +8,7 @@ import {
 } from "@/lib/airbnbSearch";
 import { track } from "@/lib/analytics";
 import {
+  getLastSearchInputs,
   labelsForVibeKeys,
   loadPreviousSearches,
   savePreviousSearch,
@@ -16,7 +17,7 @@ import {
 } from "@/lib/searchHistory";
 import { getVisitorId } from "@/lib/visitorId";
 import { ALL_VIBES, vibeKey } from "@/lib/vibes";
-import { differenceInCalendarDays, format } from "date-fns";
+import { differenceInCalendarDays, format, isBefore, parseISO, startOfDay } from "date-fns";
 import {
   ChevronDown,
   ChevronLeft,
@@ -110,10 +111,16 @@ function PlaceInput({
   const [suggestions, setSuggestions] = useState<PlaceSuggestion[]>([]);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [focused, setFocused] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
   const pickedRef = useRef(false);
 
   useEffect(() => {
+    // Only suggest while the user is editing — ignore programmatic prefills.
+    if (!focused) {
+      setOpen(false);
+      return;
+    }
     if (pickedRef.current) {
       pickedRef.current = false;
       return;
@@ -123,6 +130,7 @@ function PlaceInput({
     const t = setTimeout(async () => {
       if (q.length < 2) {
         setSuggestions([]);
+        setOpen(false);
         return;
       }
       setLoading(true);
@@ -140,12 +148,13 @@ function PlaceInput({
       clearTimeout(t);
       ctrl.abort();
     };
-  }, [value]);
+  }, [value, focused]);
 
   useEffect(() => {
     function onDoc(e: MouseEvent) {
       if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) {
         setOpen(false);
+        setFocused(false);
       }
     }
     document.addEventListener("mousedown", onDoc);
@@ -158,12 +167,15 @@ function PlaceInput({
         type="text"
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        onFocus={() => suggestions.length && setOpen(true)}
+        onFocus={() => {
+          setFocused(true);
+          if (suggestions.length > 0) setOpen(true);
+        }}
         placeholder="Anywhere"
         autoComplete="off"
         className="w-full rounded-xl border border-[#DDDDDD] bg-white px-4 py-3.5 text-[16px] text-[#222] outline-none transition-colors placeholder:text-[#B0B0B0] focus:border-[#222]"
       />
-      {open && (suggestions.length > 0 || loading) && (
+      {open && focused && (suggestions.length > 0 || loading) && (
         <ul className="absolute left-0 right-0 top-[calc(100%+8px)] z-20 overflow-hidden rounded-2xl border border-[#DDDDDD] bg-white py-2 shadow-[0_6px_20px_rgba(0,0,0,0.12)]">
           {loading && suggestions.length === 0 && (
             <li className="px-4 py-3 text-[14px] text-[#B0B0B0]">
@@ -321,6 +333,35 @@ export default function Home() {
       guests: Number.isFinite(adults) && adults! > 0 ? adults : undefined,
     });
     setPreviousSearches(next);
+  }
+
+  /** Prefill Where / When / Guests from the last search when fields are empty. */
+  function prefillFromLastSearch() {
+    const last = getLastSearchInputs(
+      previousSearches.length > 0 ? previousSearches : loadPreviousSearches(),
+    );
+    if (!last) return;
+
+    const placeValue = last.place.trim();
+    if (placeValue) {
+      setPlace((current) => current || placeValue);
+    }
+
+    if (last.guests && last.guests > 0) {
+      setGuests((current) => current || String(last.guests));
+    }
+
+    if (last.checkin) {
+      setRange((current) => {
+        if (current?.from) return current;
+        const from = parseISO(last.checkin!);
+        const to = last.checkout ? parseISO(last.checkout) : undefined;
+        const today = startOfDay(new Date());
+        if (isBefore(from, today)) return current;
+        if (to && isBefore(to, today)) return current;
+        return { from, to };
+      });
+    }
   }
 
   function clearPendingOutcome() {
@@ -659,6 +700,7 @@ export default function Home() {
                 categories: labelsForVibeKeys(Array.from(selected)),
                 category_count: selectedCount,
               });
+              prefillFromLastSearch();
               setStep("search");
             }}
             className={[

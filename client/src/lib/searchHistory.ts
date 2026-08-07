@@ -66,3 +66,17 @@ export function summarizeSearch(search: PreviousSearch): string {
   if (search.priceMax) parts.push(`≤ $${search.priceMax}/night`);
   return parts.join(" · ");
 }
+
+/** Most recent search inputs for prefilling the search form. */
+export function getLastSearchInputs(
+  searches: PreviousSearch[] = loadPreviousSearches(),
+): Pick<PreviousSearch, "place" | "checkin" | "checkout" | "guests"> | null {
+  const last = searches[0];
+  if (!last) return null;
+  return {
+    place: last.place,
+    checkin: last.checkin,
+    checkout: last.checkout,
+    guests: last.guests,
+  };
+}
