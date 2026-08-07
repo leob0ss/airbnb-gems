@@ -8,6 +8,7 @@ import {
 } from "@/lib/airbnbSearch";
 import { track } from "@/lib/analytics";
 import {
+  getLastSearchInputs,
   labelsForVibeKeys,
   loadPreviousSearches,
   savePreviousSearch,
@@ -16,7 +17,7 @@ import {
 } from "@/lib/searchHistory";
 import { getVisitorId } from "@/lib/visitorId";
 import { ALL_VIBES, vibeKey } from "@/lib/vibes";
-import { differenceInCalendarDays, format } from "date-fns";
+import { differenceInCalendarDays, format, isBefore, parseISO, startOfDay } from "date-fns";
 import {
   ChevronDown,
   ChevronLeft,
@@ -321,6 +322,35 @@ export default function Home() {
       guests: Number.isFinite(adults) && adults! > 0 ? adults : undefined,
     });
     setPreviousSearches(next);
+  }
+
+  /** Prefill Where / When / Guests from the last search when fields are empty. */
+  function prefillFromLastSearch() {
+    const last = getLastSearchInputs(
+      previousSearches.length > 0 ? previousSearches : loadPreviousSearches(),
+    );
+    if (!last) return;
+
+    const placeValue = last.place.trim();
+    if (placeValue) {
+      setPlace((current) => current || placeValue);
+    }
+
+    if (last.guests && last.guests > 0) {
+      setGuests((current) => current || String(last.guests));
+    }
+
+    if (last.checkin) {
+      setRange((current) => {
+        if (current?.from) return current;
+        const from = parseISO(last.checkin!);
+        const to = last.checkout ? parseISO(last.checkout) : undefined;
+        const today = startOfDay(new Date());
+        if (isBefore(from, today)) return current;
+        if (to && isBefore(to, today)) return current;
+        return { from, to };
+      });
+    }
   }
 
   function clearPendingOutcome() {
@@ -659,6 +689,7 @@ export default function Home() {
                 categories: labelsForVibeKeys(Array.from(selected)),
                 category_count: selectedCount,
               });
+              prefillFromLastSearch();
               setStep("search");
             }}
             className={[
