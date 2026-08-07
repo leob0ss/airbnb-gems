@@ -33,6 +33,13 @@ pnpm dev
 3. **Resend** env vars: `NOTIFY_EMAIL`, `RESEND_API_KEY`, optional `RESEND_FROM`.
 4. Optional: `VITE_GOOGLE_MAPS_API_KEY` for the desktop map view.
 5. Optional: `VITE_POSTHOG_PROJECT_TOKEN` (+ `VITE_POSTHOG_HOST`) for product analytics. Visitors are identified by the same `visitor_id` stored in the browser, so Person → Activity in PostHog shows their event stream.
+6. Optional (agent / local read access): `POSTHOG_PERSONAL_API_KEY` + `POSTHOG_PROJECT_ID` so scripts can query PostHog. Create a **Personal API key** with **Query Read** at [User API keys](https://us.posthog.com/settings/user-api-keys). Then:
+
+   ```bash
+   pnpm posthog:recent          # last 7 days of custom events
+   pnpm posthog:persons         # recent persons
+   pnpm posthog:query -- --person swift-otter-4821
+   ```
 
 ## Updating listings
 
