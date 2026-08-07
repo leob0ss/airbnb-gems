@@ -111,10 +111,16 @@ function PlaceInput({
   const [suggestions, setSuggestions] = useState<PlaceSuggestion[]>([]);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [focused, setFocused] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
   const pickedRef = useRef(false);
 
   useEffect(() => {
+    // Only suggest while the user is editing — ignore programmatic prefills.
+    if (!focused) {
+      setOpen(false);
+      return;
+    }
     if (pickedRef.current) {
       pickedRef.current = false;
       return;
@@ -124,6 +130,7 @@ function PlaceInput({
     const t = setTimeout(async () => {
       if (q.length < 2) {
         setSuggestions([]);
+        setOpen(false);
         return;
       }
       setLoading(true);
@@ -141,12 +148,13 @@ function PlaceInput({
       clearTimeout(t);
       ctrl.abort();
     };
-  }, [value]);
+  }, [value, focused]);
 
   useEffect(() => {
     function onDoc(e: MouseEvent) {
       if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) {
         setOpen(false);
+        setFocused(false);
       }
     }
     document.addEventListener("mousedown", onDoc);
@@ -159,12 +167,15 @@ function PlaceInput({
         type="text"
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        onFocus={() => suggestions.length && setOpen(true)}
+        onFocus={() => {
+          setFocused(true);
+          if (suggestions.length > 0) setOpen(true);
+        }}
         placeholder="Anywhere"
         autoComplete="off"
         className="w-full rounded-xl border border-[#DDDDDD] bg-white px-4 py-3.5 text-[16px] text-[#222] outline-none transition-colors placeholder:text-[#B0B0B0] focus:border-[#222]"
       />
-      {open && (suggestions.length > 0 || loading) && (
+      {open && focused && (suggestions.length > 0 || loading) && (
         <ul className="absolute left-0 right-0 top-[calc(100%+8px)] z-20 overflow-hidden rounded-2xl border border-[#DDDDDD] bg-white py-2 shadow-[0_6px_20px_rgba(0,0,0,0.12)]">
           {loading && suggestions.length === 0 && (
             <li className="px-4 py-3 text-[14px] text-[#B0B0B0]">
