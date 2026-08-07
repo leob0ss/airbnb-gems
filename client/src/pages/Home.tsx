@@ -56,7 +56,7 @@ function BrandMark({ className = "h-8" }: { className?: string }) {
           opacity="0.6"
         />
       </svg>
-      <span className="text-[28px] font-semibold tracking-tight text-[#222]">
+      <span className="text-[28px] font-semibold tracking-tight text-foreground">
         Airbnb <span className="text-[#FF385C]">Gems</span>
       </span>
     </div>
@@ -82,8 +82,8 @@ function VibeTile({
       className={[
         "group flex cursor-pointer flex-col items-center gap-1.5 rounded-2xl border p-2.5 transition-colors duration-200 sm:p-3",
         active
-          ? "border-[#222] bg-[#F7F7F7]"
-          : "border-[#EBEBEB] hover:border-[#DDDDDD]",
+          ? "border-foreground bg-secondary"
+          : "border-border hover:border-muted-foreground/40",
       ].join(" ")}
     >
       <img
@@ -94,7 +94,7 @@ function VibeTile({
         className="h-12 w-12 object-contain sm:h-14 sm:w-14"
         draggable={false}
       />
-      <span className="text-center text-[12px] leading-tight text-[#717171] sm:text-[13px]">
+      <span className="text-center text-[12px] leading-tight text-muted-foreground sm:text-[13px]">
         {label}
       </span>
     </button>
@@ -173,12 +173,12 @@ function PlaceInput({
         }}
         placeholder="Anywhere"
         autoComplete="off"
-        className="w-full rounded-xl border border-[#DDDDDD] bg-white px-4 py-3.5 text-[16px] text-[#222] outline-none transition-colors placeholder:text-[#B0B0B0] focus:border-[#222]"
+        className="w-full rounded-xl border border-border bg-background px-4 py-3.5 text-[16px] text-foreground outline-none transition-colors placeholder:text-muted-foreground/70 focus:border-foreground"
       />
       {open && focused && (suggestions.length > 0 || loading) && (
-        <ul className="absolute left-0 right-0 top-[calc(100%+8px)] z-20 overflow-hidden rounded-2xl border border-[#DDDDDD] bg-white py-2 shadow-[0_6px_20px_rgba(0,0,0,0.12)]">
+        <ul className="absolute left-0 right-0 top-[calc(100%+8px)] z-20 overflow-hidden rounded-2xl border border-border bg-popover py-2 shadow-[0_6px_20px_rgba(0,0,0,0.12)] dark:shadow-[0_6px_24px_rgba(0,0,0,0.45)]">
           {loading && suggestions.length === 0 && (
-            <li className="px-4 py-3 text-[14px] text-[#B0B0B0]">
+            <li className="px-4 py-3 text-[14px] text-muted-foreground/70">
               Searching…
             </li>
           )}
@@ -192,12 +192,12 @@ function PlaceInput({
                   onChange(s.name);
                   setOpen(false);
                 }}
-                className="flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-[#F7F7F7]"
+                className="flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-secondary"
               >
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#EBEBEB]">
-                  <MapPin className="h-4 w-4 text-[#222]" />
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-muted">
+                  <MapPin className="h-4 w-4 text-foreground" />
                 </span>
-                <span className="truncate text-[14px] text-[#222]">
+                <span className="truncate text-[14px] text-foreground">
                   {s.name}
                 </span>
               </button>
@@ -231,19 +231,19 @@ function WhenPicker({
         type="button"
         aria-expanded={open}
         onClick={() => setOpen((v) => !v)}
-        className="flex w-full items-center justify-between rounded-xl border border-[#DDDDDD] bg-white px-4 py-3.5 text-left transition-colors hover:border-[#222]"
+        className="flex w-full items-center justify-between rounded-xl border border-border bg-background px-4 py-3.5 text-left transition-colors hover:border-foreground"
       >
         <span
-          className={`text-[16px] ${range?.from ? "text-[#222]" : "text-[#B0B0B0]"}`}
+          className={`text-[16px] ${range?.from ? "text-foreground" : "text-muted-foreground/70"}`}
         >
           {label}
         </span>
         <ChevronDown
-          className={`h-[18px] w-[18px] text-[#717171] transition-transform ${open ? "rotate-180" : ""}`}
+          className={`h-[18px] w-[18px] text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`}
         />
       </button>
       {open && (
-        <div className="absolute left-0 right-0 top-[calc(100%+8px)] z-20 rounded-2xl border border-[#DDDDDD] bg-white p-3 shadow-[0_6px_20px_rgba(0,0,0,0.12)]">
+        <div className="absolute left-0 right-0 top-[calc(100%+8px)] z-20 rounded-2xl border border-border bg-popover p-3 shadow-[0_6px_20px_rgba(0,0,0,0.12)] dark:shadow-[0_6px_24px_rgba(0,0,0,0.45)]">
           <DayPicker
             mode="range"
             selected={range}
@@ -255,7 +255,7 @@ function WhenPicker({
           <div className="mt-2 flex justify-between px-1">
             <button
               type="button"
-              className="text-[13px] text-[#717171] hover:text-[#222]"
+              className="text-[13px] text-muted-foreground hover:text-foreground"
               onClick={() => {
                 onChange(undefined);
                 setOpen(false);
@@ -457,14 +457,14 @@ export default function Home() {
 
   if (step === "search") {
     return (
-      <div className="min-h-screen bg-white text-[#222]">
+      <div className="min-h-screen bg-background text-foreground">
         <div className="pb-40">
           <main className="mx-auto w-full max-w-3xl px-6">
             <div className="mx-auto flex max-w-md flex-col gap-6 pt-12 pb-8">
               <button
                 type="button"
                 onClick={() => setStep("vibe")}
-                className="flex items-center gap-1.5 self-start text-[14px] font-medium text-[#222]"
+                className="flex items-center gap-1.5 self-start text-[14px] font-medium text-foreground"
               >
                 <ChevronLeft className="h-4 w-4" strokeWidth={2.5} />
                 Categories
@@ -472,24 +472,24 @@ export default function Home() {
 
               <div className="flex flex-col gap-5">
                 <div>
-                  <label className="mb-2 block text-[15px] font-semibold text-[#222]">
+                  <label className="mb-2 block text-[15px] font-semibold text-foreground">
                     Where
                   </label>
                   <PlaceInput value={place} onChange={setPlace} />
-                  <p className="mt-1.5 text-[13px] text-[#B0B0B0]">
+                  <p className="mt-1.5 text-[13px] text-muted-foreground/70">
                     Leave empty to search everywhere.
                   </p>
                 </div>
 
                 <div>
-                  <label className="mb-2 block text-[15px] font-semibold text-[#222]">
+                  <label className="mb-2 block text-[15px] font-semibold text-foreground">
                     When
                   </label>
                   <WhenPicker range={range} onChange={setRange} />
                 </div>
 
                 <div>
-                  <label className="mb-2 block text-[15px] font-semibold text-[#222]">
+                  <label className="mb-2 block text-[15px] font-semibold text-foreground">
                     Guests
                   </label>
                   <input
@@ -499,7 +499,7 @@ export default function Home() {
                     placeholder="Any"
                     value={guests}
                     onChange={(e) => setGuests(e.target.value)}
-                    className="w-full rounded-xl border border-[#DDDDDD] bg-white px-4 py-3.5 text-[16px] text-[#222] outline-none transition-colors placeholder:text-[#B0B0B0] focus:border-[#222]"
+                    className="w-full rounded-xl border border-border bg-background px-4 py-3.5 text-[16px] text-foreground outline-none transition-colors placeholder:text-muted-foreground/70 focus:border-foreground"
                   />
                 </div>
               </div>
@@ -507,7 +507,7 @@ export default function Home() {
           </main>
         </div>
 
-        <div className="fixed inset-x-0 bottom-0 z-30 border-t border-[#EBEBEB] bg-white/95 backdrop-blur-sm">
+        <div className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-background/95 backdrop-blur-sm">
           <div className="mx-auto flex max-w-md flex-col gap-2 px-6 py-4">
             <a
               href={searchUrl}
@@ -567,7 +567,7 @@ export default function Home() {
               <Search className="h-[18px] w-[18px]" strokeWidth={3} />
               Search on Airbnb
             </a>
-            <p className="text-center text-[12px] text-[#B0B0B0]">
+            <p className="text-center text-[12px] text-muted-foreground/70">
               You will be redirected to Airbnb next
             </p>
           </div>
@@ -577,12 +577,12 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-white text-[#222]">
+    <div className="min-h-screen bg-background text-foreground">
       <div className="pb-40">
         <header className="px-6 pt-16 pb-8 text-center sm:pt-20 sm:pb-10">
           <h1 className="sr-only">Airbnb Gems</h1>
           <BrandMark />
-          <p className="mx-auto mt-4 max-w-lg text-[15px] leading-relaxed text-[#717171]">
+          <p className="mx-auto mt-4 max-w-lg text-[15px] leading-relaxed text-muted-foreground">
             In 2025, Airbnb quietly hid unique categories from its app, making
             it harder to search for special places to stay at. I made this tool
             to fix this.
@@ -623,12 +623,12 @@ export default function Home() {
           {previousSearches.length > 0 && (
             <section className="mt-12 pb-4">
               <div className="mb-4 flex items-center gap-2">
-                <Clock className="h-4 w-4 text-[#717171]" strokeWidth={2} />
-                <h2 className="text-[15px] font-semibold text-[#222]">
+                <Clock className="h-4 w-4 text-muted-foreground" strokeWidth={2} />
+                <h2 className="text-[15px] font-semibold text-foreground">
                   Previous searches
                 </h2>
               </div>
-              <ul className="divide-y divide-[#EBEBEB] border-y border-[#EBEBEB]">
+              <ul className="divide-y divide-border border-y border-border">
                 {previousSearches.map((search) => {
                   const summary = summarizeSearch(search);
                   return (
@@ -651,26 +651,26 @@ export default function Home() {
                             guests: search.guests,
                           });
                         }}
-                        className="flex items-start gap-3 py-3.5 transition-colors hover:bg-[#F7F7F7]"
+                        className="flex items-start gap-3 py-3.5 transition-colors hover:bg-secondary"
                       >
-                        <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#F7F7F7]">
+                        <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-secondary">
                           <Search
-                            className="h-4 w-4 text-[#222]"
+                            className="h-4 w-4 text-foreground"
                             strokeWidth={2.5}
                           />
                         </span>
                         <span className="min-w-0 flex-1">
-                          <span className="block truncate text-[14px] font-medium text-[#222]">
+                          <span className="block truncate text-[14px] font-medium text-foreground">
                             {search.vibeLabels.length
                               ? search.vibeLabels.join(" · ")
                               : "Airbnb search"}
                           </span>
                           {summary ? (
-                            <span className="mt-0.5 block truncate text-[13px] text-[#717171]">
+                            <span className="mt-0.5 block truncate text-[13px] text-muted-foreground">
                               {summary}
                             </span>
                           ) : (
-                            <span className="mt-0.5 block text-[13px] text-[#B0B0B0]">
+                            <span className="mt-0.5 block text-[13px] text-muted-foreground/70">
                               Anywhere · Any dates
                             </span>
                           )}
@@ -685,9 +685,9 @@ export default function Home() {
         </main>
       </div>
 
-      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-[#EBEBEB] bg-white/95 backdrop-blur-sm">
+      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-background/95 backdrop-blur-sm">
         <div className="mx-auto flex max-w-3xl items-center justify-between gap-4 px-6 py-4">
-          <p className="text-[14px] text-[#717171]">
+          <p className="text-[14px] text-muted-foreground">
             {canContinue
               ? `${selectedCount} categor${selectedCount === 1 ? "y" : "ies"} selected`
               : "Pick a category to begin"}
@@ -707,7 +707,7 @@ export default function Home() {
               "h-12 rounded-lg px-7 text-[16px] font-medium text-white transition-colors duration-200",
               canContinue
                 ? "cursor-pointer bg-[#FF385C] hover:bg-[#E31C5F]"
-                : "cursor-not-allowed bg-[#FFB3C1]",
+                : "cursor-not-allowed bg-[#FF385C]/40",
             ].join(" ")}
           >
             Continue
