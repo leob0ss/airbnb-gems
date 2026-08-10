@@ -14,7 +14,7 @@
     "check": "tsc --noEmit",
     "format": "prettier --write .",
     "test": "vitest run",
-    "posthog:survey:open-feedback": "node scripts/posthog-create-open-feedback-survey.mjs"
+    "posthog:survey:nps": "node scripts/posthog-nps-survey.mjs"
   },
   "dependencies": {
     "@googlemaps/markerclusterer": "^2.6.2",

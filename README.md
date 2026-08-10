@@ -33,12 +33,11 @@ pnpm dev
 3. **Resend** env vars: `NOTIFY_EMAIL`, `RESEND_API_KEY`, optional `RESEND_FROM`.
 4. Optional: `VITE_GOOGLE_MAPS_API_KEY` for the desktop map view.
 5. Optional: `VITE_POSTHOG_PROJECT_TOKEN` (+ `VITE_POSTHOG_HOST`) for product analytics. Visitors are identified by the same `visitor_id` stored in the browser, so Person → Activity in PostHog shows their event stream.
-6. Optional: PostHog Surveys — with the project token set, launched popover surveys render automatically. Create the built-in **Open feedback** template with:
+6. Optional: PostHog Surveys — with the project token set, launched popover surveys render automatically. Active survey: **Net promoter score (NPS) (2026-08-10 08:49)**. After Launch in PostHog (and optional trigger on `airbnb_search_opened`), the popover appears on the site with no extra UI. Helper:
    ```bash
-   # .env needs POSTHOG_PERSONAL_API_KEY (survey:write) + POSTHOG_PROJECT_ID
-   pnpm posthog:survey:open-feedback -- --launch
+   # .env needs POSTHOG_PERSONAL_API_KEY + POSTHOG_PROJECT_ID
+   pnpm posthog:survey:nps -- --launch --set-search-trigger
    ```
-   Or in PostHog: Surveys → New survey → **Open feedback** → set trigger to event `airbnb_search_opened` → Launch.
 
 ## Updating listings
 
@@ -60,7 +59,7 @@ pnpm dev
 | `pnpm data:json`                     | Convert CSV → `client/public/listings.json`          |
 | `pnpm build`                         | Regenerate JSON + build for Vercel                   |
 | `pnpm test`                          | Run Vitest tests                                     |
-| `pnpm posthog:survey:open-feedback`  | Create PostHog Open feedback survey (add `-- --launch`) |
+| `pnpm posthog:survey:nps`            | Find/launch NPS survey (`-- --launch`, `-- --set-search-trigger`) |
 
 ## Project structure
 
