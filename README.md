@@ -33,6 +33,12 @@ pnpm dev
 3. **Resend** env vars: `NOTIFY_EMAIL`, `RESEND_API_KEY`, optional `RESEND_FROM`.
 4. Optional: `VITE_GOOGLE_MAPS_API_KEY` for the desktop map view.
 5. Optional: `VITE_POSTHOG_PROJECT_TOKEN` (+ `VITE_POSTHOG_HOST`) for product analytics. Visitors are identified by the same `visitor_id` stored in the browser, so Person → Activity in PostHog shows their event stream.
+6. Optional: PostHog Surveys — with the project token set, launched popover surveys render automatically. Create the built-in **Open feedback** template with:
+   ```bash
+   # .env needs POSTHOG_PERSONAL_API_KEY (survey:write) + POSTHOG_PROJECT_ID
+   pnpm posthog:survey:open-feedback -- --launch
+   ```
+   Or in PostHog: Surveys → New survey → **Open feedback** → set trigger to event `airbnb_search_opened` → Launch.
 
 ## Updating listings
 
@@ -48,12 +54,13 @@ pnpm dev
 
 ## Scripts
 
-| Command          | Description                                 |
-| ---------------- | ------------------------------------------- |
-| `pnpm dev`       | Local dev (Vite + form API routes)          |
-| `pnpm data:json` | Convert CSV → `client/public/listings.json` |
-| `pnpm build`     | Regenerate JSON + build for Vercel          |
-| `pnpm test`      | Run Vitest tests                            |
+| Command                              | Description                                          |
+| ------------------------------------ | ---------------------------------------------------- |
+| `pnpm dev`                           | Local dev (Vite + form API routes)                   |
+| `pnpm data:json`                     | Convert CSV → `client/public/listings.json`          |
+| `pnpm build`                         | Regenerate JSON + build for Vercel                   |
+| `pnpm test`                          | Run Vitest tests                                     |
+| `pnpm posthog:survey:open-feedback`  | Create PostHog Open feedback survey (add `-- --launch`) |
 
 ## Project structure
 

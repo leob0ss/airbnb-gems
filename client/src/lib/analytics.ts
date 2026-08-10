@@ -24,6 +24,8 @@ export function initAnalytics(): void {
     capture_pageview: true,
     capture_pageleave: true,
     autocapture: false,
+    // Popover surveys (created in PostHog) render automatically when conditions match.
+    disable_surveys: false,
   });
 
   posthog.identify(getVisitorId());

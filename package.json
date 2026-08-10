@@ -13,7 +13,8 @@
     "start": "NODE_ENV=production tsx server/_core/index.ts",
     "check": "tsc --noEmit",
     "format": "prettier --write .",
-    "test": "vitest run"
+    "test": "vitest run",
+    "posthog:survey:open-feedback": "node scripts/posthog-create-open-feedback-survey.mjs"
   },
   "dependencies": {
     "@googlemaps/markerclusterer": "^2.6.2",
