@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://airbnb-gems.vercel.app/sitemap.xml

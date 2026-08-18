@@ -1,3 +1,4 @@
+import BrandMark from "@/components/BrandMark";
 import MissingFilterModal from "@/components/MissingFilterModal";
 import {
   buildAirbnbSearchUrl,
@@ -32,34 +33,6 @@ import "react-day-picker/style.css";
 const PENDING_RESET_KEY = "ag_pending_search_reset";
 
 type Step = "vibe" | "search";
-
-function BrandMark({ className = "h-8" }: { className?: string }) {
-  return (
-    <div className={`inline-flex items-center gap-2.5 ${className}`}>
-      <svg
-        viewBox="0 0 28 28"
-        xmlns="http://www.w3.org/2000/svg"
-        className="h-8 w-8"
-        aria-hidden="true"
-      >
-        <polygon
-          points="14,2 24,7.5 24,20.5 14,26 4,20.5 4,7.5"
-          fill="#FF385C"
-        />
-        <polygon
-          points="14,7 20,10.5 20,17.5 14,21 8,17.5 8,10.5"
-          fill="none"
-          stroke="#ffffff"
-          strokeWidth="1"
-          opacity="0.6"
-        />
-      </svg>
-      <span className="text-[28px] font-semibold tracking-tight text-foreground">
-        Airbnb <span className="text-[#FF385C]">Gems</span>
-      </span>
-    </div>
-  );
-}
 
 function VibeTile({
   active,
@@ -616,6 +589,15 @@ export default function Home() {
             </section>
           )}
         </main>
+
+        <footer className="mx-auto mt-16 max-w-3xl px-6 text-center text-[13px] leading-relaxed text-muted-foreground">
+          <a
+            href="/blog/where-did-airbnb-categories-go/"
+            className="underline underline-offset-2 hover:text-foreground"
+          >
+            Where did Airbnb&apos;s unique stay categories go?
+          </a>
+        </footer>
       </div>
 
       <div className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-background/95 backdrop-blur-sm">
