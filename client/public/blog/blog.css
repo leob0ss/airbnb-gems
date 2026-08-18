@@ -143,7 +143,7 @@ main {
 }
 
 .figure {
-  width: min(72rem, calc(100vw - 2.5rem));
+  width: min(56rem, calc(100vw - 2.5rem));
   margin: 2rem 0 2.25rem;
   margin-left: 50%;
   transform: translateX(-50%);
