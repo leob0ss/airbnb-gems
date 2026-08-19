@@ -589,16 +589,10 @@ export default function Home() {
             </section>
           )}
         </main>
-
-        <footer className="mx-auto mt-16 max-w-3xl px-6 text-center text-[13px] leading-relaxed text-muted-foreground">
-          <a
-            href="/blog/where-did-airbnb-categories-go/"
-            className="underline underline-offset-2 hover:text-foreground"
-          >
-            Where did Airbnb&apos;s unique stay categories go?
-          </a>
-        </footer>
       </div>
+    </div>
+  </body>
+</html>
 
       <div className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-background/95 backdrop-blur-sm">
         <div className="mx-auto flex max-w-3xl items-center justify-between gap-4 px-6 py-4">
