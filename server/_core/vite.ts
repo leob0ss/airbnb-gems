@@ -21,8 +21,17 @@ export async function setupVite(app: Express, server: Server) {
   });
 
   app.use(vite.middlewares);
+
+  const publicDir = path.resolve(import.meta.dirname, "../..", "client", "public");
+  app.use(express.static(publicDir));
+
   app.use("*", async (req, res, next) => {
     const url = req.originalUrl;
+
+    if (req.path === "/blog" || req.path.startsWith("/blog/")) {
+      res.status(404).end("Not found");
+      return;
+    }
 
     try {
       const clientTemplate = path.resolve(

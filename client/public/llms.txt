@@ -9,4 +9,4 @@
 
 ## Blog
 
-- [Where Did Airbnb's Unique Stay Categories Go?](https://airbnb-gems.vercel.app/blog/where-did-airbnb-categories-go/): What the old category bar was, why Airbnb removed it in June 2025, and a free way to browse by treehouse, cabin, or A-frame again
+- [Where Did Airbnb's Unique Stay Categories Go? (Treehouses, Cabins, Caves...)](https://airbnb-gems.vercel.app/blog/where-did-airbnb-categories-go/): What the old category bar was, why Airbnb removed it in June 2025, and a free way to browse by treehouse, cabin, or A-frame again

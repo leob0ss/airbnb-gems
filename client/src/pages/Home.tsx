@@ -489,9 +489,14 @@ export default function Home() {
           <h1 className="sr-only">Airbnb Gems</h1>
           <BrandMark />
           <p className="mx-auto mt-4 max-w-lg text-[15px] leading-relaxed text-muted-foreground">
-            In 2025, Airbnb quietly hid unique categories from its app, making
-            it harder to search for special places to stay at. I made this tool
-            to fix this.
+            Filter Airbnb by 'Unique Stays' once again, a feature that Airbnb{" "}
+            <a
+              href="/blog/where-did-airbnb-categories-go/"
+              className="underline underline-offset-2 hover:text-foreground"
+            >
+              killed
+            </a>{" "}
+            in 2025.
           </p>
         </header>
 
