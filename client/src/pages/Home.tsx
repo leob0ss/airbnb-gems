@@ -590,9 +590,6 @@ export default function Home() {
           )}
         </main>
       </div>
-    </div>
-  </body>
-</html>
 
       <div className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-background/95 backdrop-blur-sm">
         <div className="mx-auto flex max-w-3xl items-center justify-between gap-4 px-6 py-4">
