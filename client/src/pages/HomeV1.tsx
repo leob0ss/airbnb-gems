@@ -896,6 +896,13 @@ export default function Home() {
               <a href="/" className="underline underline-offset-2 hover:text-foreground">
                 New category search
               </a>
+              {" · "}
+              <a
+                href="/blog/where-did-airbnb-categories-go/"
+                className="underline underline-offset-2 hover:text-foreground"
+              >
+                Blog
+              </a>
             </p>
             <p className="text-sm text-muted-foreground">
               Data sourced from Airbnb's public listing pages.

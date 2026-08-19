@@ -1,0 +1,12 @@
+# Airbnb Gems
+
+> A free tool for browsing unique Airbnb stay types (treehouses, cabins, A-frames, and more) after Airbnb removed homepage category browsing in June 2025. Not affiliated with Airbnb; bookings happen on Airbnb.
+
+## Site
+
+- [Home](https://airbnb-gems.vercel.app/): Pick unique stay categories, then search on Airbnb
+- [US catalog (v1)](https://airbnb-gems.vercel.app/v1): Hand-picked treehouses and A-frames in the US
+
+## Blog
+
+- [Where Did Airbnb's Unique Stay Categories Go?](https://airbnb-gems.vercel.app/blog/where-did-airbnb-categories-go/): What the old category bar was, why Airbnb removed it in June 2025, and a free way to browse by treehouse, cabin, or A-frame again
