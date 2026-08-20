@@ -13,7 +13,10 @@
     "start": "NODE_ENV=production tsx server/_core/index.ts",
     "check": "tsc --noEmit",
     "format": "prettier --write .",
-    "test": "vitest run"
+    "test": "vitest run",
+    "posthog:query": "node scripts/posthog-query.mjs",
+    "posthog:recent": "node scripts/posthog-query.mjs --recent",
+    "posthog:persons": "node scripts/posthog-query.mjs --persons"
   },
   "dependencies": {
     "@googlemaps/markerclusterer": "^2.6.2",
