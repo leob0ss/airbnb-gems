@@ -30,7 +30,7 @@
       "includeFiles": "server/contact/**,server/_core/env.ts,server/_core/notification.ts,server/_core/pacificTime.ts"
     },
     "api/filter-request.ts": {
-      "includeFiles": "server/filterRequest/**,server/_core/env.ts,server/_core/notification.ts,server/_core/pacificTime.ts"
+      "includeFiles": "server/filterRequest/**,server/_core/env.ts,server/_core/notification.ts,server/_core/pacificTime.ts,server/_core/posthog.ts"
     },
     "api/survey.ts": {
       "includeFiles": "server/survey/**,server/_core/env.ts,server/_core/notification.ts,server/_core/pacificTime.ts"

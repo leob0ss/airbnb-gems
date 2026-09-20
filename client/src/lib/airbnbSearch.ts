@@ -1,4 +1,4 @@
-import { EXTRA_VIBES, type Vibe, vibeKey } from "./vibes";
+import { EXTRA_VIBES, PROPERTY_VIBES, type Vibe, vibeKey } from "./vibes";
 
 /** Airbnb's default undated search night count for price filters. */
 export const DEFAULT_PRICE_FILTER_NIGHTS = 5;
@@ -55,7 +55,11 @@ export function buildAirbnbSearchUrl(params: AirbnbSearchParams): string {
   const order: string[] = [];
   for (const key of params.selectedKeys) {
     if (key.startsWith("p:")) {
-      qs.append("property_type_id[]", key.slice(2));
+      const prop = PROPERTY_VIBES.find((p) => vibeKey(p) === key);
+      const ids = prop ? [prop.id, ...(prop.extraIds ?? [])] : [key.slice(2)];
+      for (const id of ids) {
+        qs.append("property_type_id[]", String(id));
+      }
     } else if (key.startsWith("e:")) {
       const extra = EXTRA_VIBES.find((e) => vibeKey(e) === key);
       if (!extra) continue;

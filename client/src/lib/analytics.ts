@@ -46,4 +46,12 @@ export function track(
   posthog.capture(event, properties);
 }
 
+/** Attach person properties without changing the visitor distinct id. */
+export function identifyVisitor(
+  properties?: Record<string, string | number | boolean | null>,
+): void {
+  if (!POSTHOG_KEY) return;
+  posthog.identify(getVisitorId(), properties);
+}
+
 export { posthog };

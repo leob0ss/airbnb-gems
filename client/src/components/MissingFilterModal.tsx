@@ -7,7 +7,7 @@
  *
  * On submit: saves to DB via /api/filter-request and notifies the owner.
  */
-import { track } from "@/lib/analytics";
+import { identifyVisitor, track } from "@/lib/analytics";
 import { X } from "lucide-react";
 import { useState } from "react";
 
@@ -73,8 +73,13 @@ export default function MissingFilterModal({
         return;
       }
 
+      if (email.trim()) {
+        identifyVisitor({ email: email.trim() });
+      }
       track("filter_requested", {
         has_email: Boolean(email.trim()),
+        request: whatLookingFor.trim(),
+        request_length: whatLookingFor.trim().length,
       });
       setStep("thanks");
     } catch {

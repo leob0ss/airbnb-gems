@@ -12,6 +12,7 @@ describe("parseFilterRequestInput", () => {
       whatLookingFor: "Yurts in Colorado",
       email: "user@example.com",
       visitorId: "vis_abc",
+      feature: null,
     });
   });
 
@@ -21,6 +22,21 @@ describe("parseFilterRequestInput", () => {
       whatLookingFor: "Cave houses",
       email: null,
       visitorId: null,
+      feature: null,
+    });
+  });
+
+  it("accepts a named feature waitlist", () => {
+    const result = parseFilterRequestInput({
+      whatLookingFor: "cabin by a lake",
+      email: "user@example.com",
+      feature: "Describe",
+    });
+    expect(result).toEqual({
+      whatLookingFor: "cabin by a lake",
+      email: "user@example.com",
+      visitorId: null,
+      feature: "Describe",
     });
   });
 

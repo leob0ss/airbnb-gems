@@ -41,3 +41,14 @@ describe("buildAirbnbSearchUrl price max", () => {
     );
   });
 });
+
+describe("buildAirbnbSearchUrl boat / houseboat merge", () => {
+  it("ORs Boat and Houseboat property types", () => {
+    const url = buildAirbnbSearchUrl({ selectedKeys: ["p:8"] });
+    const qs = new URL(url).searchParams;
+    expect(qs.getAll("property_type_id[]")).toEqual(["8", "64"]);
+    expect(qs.getAll("kg_or_tags[]")).toEqual([]);
+    expect(qs.getAll("kg_and_tags[]")).toEqual([]);
+  });
+});
+

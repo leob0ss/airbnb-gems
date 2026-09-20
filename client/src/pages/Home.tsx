@@ -1,4 +1,10 @@
 import BrandMark from "@/components/BrandMark";
+import {
+  DescribePreview,
+  FindModeTabs,
+  HandpickedPreview,
+  type FindMode,
+} from "@/components/FindModes";
 import MissingFilterModal from "@/components/MissingFilterModal";
 import {
   buildAirbnbSearchUrl,
@@ -12,8 +18,6 @@ import {
   labelsForVibeKeys,
   loadPreviousSearches,
   savePreviousSearch,
-  summarizeSearch,
-  type PreviousSearch,
 } from "@/lib/searchHistory";
 import { getVisitorId } from "@/lib/visitorId";
 import { ALL_VIBES, vibeKey } from "@/lib/vibes";
@@ -21,7 +25,6 @@ import { differenceInCalendarDays, format, isBefore, parseISO, startOfDay } from
 import {
   ChevronDown,
   ChevronLeft,
-  Clock,
   MapPin,
   Search,
 } from "lucide-react";
@@ -41,7 +44,7 @@ function VibeTile({
   onClick,
 }: {
   active: boolean;
-  icon: string;
+  icon?: string;
   label: string;
   onClick: () => void;
 }) {
@@ -57,14 +60,23 @@ function VibeTile({
           : "border-border hover:border-muted-foreground/40",
       ].join(" ")}
     >
-      <img
-        src={icon}
-        alt=""
-        width={64}
-        height={64}
-        className="h-12 w-12 object-contain sm:h-14 sm:w-14"
-        draggable={false}
-      />
+      {icon ? (
+        <img
+          src={icon}
+          alt=""
+          width={64}
+          height={64}
+          className="h-12 w-12 object-contain sm:h-14 sm:w-14"
+          draggable={false}
+        />
+      ) : (
+        <span
+          aria-hidden="true"
+          className="flex h-12 w-12 items-center justify-center rounded-xl border border-dashed border-border text-[15px] font-medium text-muted-foreground sm:h-14 sm:w-14"
+        >
+          {label.charAt(0)}
+        </span>
+      )}
       <span className="text-center text-[12px] leading-tight text-muted-foreground sm:text-[13px]">
         {label}
       </span>
@@ -254,10 +266,8 @@ export default function Home() {
   const [place, setPlace] = useState("");
   const [range, setRange] = useState<DateRange | undefined>();
   const [guests, setGuests] = useState("");
-  const [previousSearches, setPreviousSearches] = useState<PreviousSearch[]>(
-    [],
-  );
-  const [showCategoryRequest, setShowCategoryRequest] = useState(false);
+  const [findMode, setFindMode] = useState<FindMode>("categories");
+  const [showFeatureRequest, setShowFeatureRequest] = useState(false);
   const visitorId = useMemo(() => getVisitorId(), []);
 
   const selectedCount = selected.size;
@@ -292,7 +302,7 @@ export default function Home() {
       : undefined;
     const checkout = range?.to ? format(range.to, "yyyy-MM-dd") : undefined;
     const adults = guests ? Number(guests) : undefined;
-    const next = savePreviousSearch({
+    savePreviousSearch({
       url: searchUrl,
       vibeKeys: Array.from(selected),
       place,
@@ -300,14 +310,11 @@ export default function Home() {
       checkout,
       guests: Number.isFinite(adults) && adults! > 0 ? adults : undefined,
     });
-    setPreviousSearches(next);
   }
 
   /** Prefill Where / When / Guests from the last search when fields are empty. */
   function prefillFromLastSearch() {
-    const last = getLastSearchInputs(
-      previousSearches.length > 0 ? previousSearches : loadPreviousSearches(),
-    );
+    const last = getLastSearchInputs(loadPreviousSearches());
     if (!last) return;
 
     const placeValue = last.place.trim();
@@ -333,13 +340,10 @@ export default function Home() {
   }
 
   useEffect(() => {
-    setPreviousSearches(loadPreviousSearches());
-
     try {
       if (sessionStorage.getItem(PENDING_RESET_KEY) === "1") {
         sessionStorage.removeItem(PENDING_RESET_KEY);
         resetToHomepage();
-        setPreviousSearches(loadPreviousSearches());
       }
     } catch {
       /* private mode */
@@ -351,7 +355,6 @@ export default function Home() {
         if (sessionStorage.getItem(PENDING_RESET_KEY) === "1") {
           sessionStorage.removeItem(PENDING_RESET_KEY);
           resetToHomepage();
-          setPreviousSearches(loadPreviousSearches());
         }
       } catch {
         /* private mode */
@@ -484,153 +487,103 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <div className="pb-40">
+      <div className={findMode === "categories" ? "pb-40" : "pb-24"}>
         <header className="px-6 pt-16 pb-8 text-center sm:pt-20 sm:pb-10">
           <h1 className="sr-only">Airbnb Gems</h1>
           <BrandMark />
           <p className="mx-auto mt-4 max-w-lg text-[15px] leading-relaxed text-muted-foreground">
-            Filter Airbnb by 'Unique Stays' once again, a feature that Airbnb{" "}
-            <a
-              href="/blog/where-did-airbnb-categories-go/"
+            Better ways to search for your perfect Airbnb.{" "}
+            <button
+              type="button"
+              onClick={() => {
+                track("missing_feature_clicked", {
+                  source: "homepage_tagline",
+                  find_mode: findMode,
+                });
+                setShowFeatureRequest(true);
+              }}
               className="underline underline-offset-2 hover:text-foreground"
             >
-              killed
-            </a>{" "}
-            in 2025.
+              Missing a feature?
+            </button>
           </p>
         </header>
 
         <main className="mx-auto w-full max-w-3xl px-6">
-          <div className="grid grid-cols-3 gap-2 sm:grid-cols-5 md:grid-cols-6">
-            {ALL_VIBES.map((vibe) => {
-              const key = vibeKey(vibe);
-              return (
-                <VibeTile
-                  key={key}
-                  active={selected.has(key)}
-                  icon={vibe.icon}
-                  label={vibe.label}
-                  onClick={() => {
-                    setSelected((prev) => toggleVibeKey(prev, vibe));
-                    track("category_toggled", {
-                      category: vibe.label,
-                      selected: !selected.has(key),
-                    });
-                  }}
-                />
-              );
-            })}
-            <VibeTile
-              active={false}
-              icon="/icons/other.svg"
-              label="Other"
-              onClick={() => {
-                track("other_clicked");
-                setShowCategoryRequest(true);
-              }}
-            />
+          <div className="mb-8 sm:mb-10">
+            <FindModeTabs mode={findMode} onChange={setFindMode} />
           </div>
 
-          {previousSearches.length > 0 && (
-            <section className="mt-12 pb-4">
-              <div className="mb-4 flex items-center gap-2">
-                <Clock className="h-4 w-4 text-muted-foreground" strokeWidth={2} />
-                <h2 className="text-[15px] font-semibold text-foreground">
-                  Previous searches
-                </h2>
-              </div>
-              <ul className="divide-y divide-border border-y border-border">
-                {previousSearches.map((search) => {
-                  const summary = summarizeSearch(search);
+          <div
+            key={findMode}
+            className="animate-in fade-in slide-in-from-bottom-2 duration-500 ease-out motion-reduce:animate-none"
+          >
+            {findMode === "categories" && (
+              <div className="grid grid-cols-3 gap-2 sm:grid-cols-5 md:grid-cols-6">
+                {ALL_VIBES.map((vibe) => {
+                  const key = vibeKey(vibe);
                   return (
-                    <li key={search.id}>
-                      <a
-                        href={search.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        onClick={() => {
-                          track("previous_search_opened", {
-                            categories: search.vibeLabels,
-                            category_count: search.vibeLabels.length,
-                            place: search.place.trim() || undefined,
-                            has_place: Boolean(search.place.trim()),
-                            has_dates: Boolean(
-                              search.checkin && search.checkout,
-                            ),
-                            checkin: search.checkin,
-                            checkout: search.checkout,
-                            guests: search.guests,
-                          });
-                        }}
-                        className="flex items-start gap-3 py-3.5 transition-colors hover:bg-secondary"
-                      >
-                        <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-secondary">
-                          <Search
-                            className="h-4 w-4 text-foreground"
-                            strokeWidth={2.5}
-                          />
-                        </span>
-                        <span className="min-w-0 flex-1">
-                          <span className="block truncate text-[14px] font-medium text-foreground">
-                            {search.vibeLabels.length
-                              ? search.vibeLabels.join(" · ")
-                              : "Airbnb search"}
-                          </span>
-                          {summary ? (
-                            <span className="mt-0.5 block truncate text-[13px] text-muted-foreground">
-                              {summary}
-                            </span>
-                          ) : (
-                            <span className="mt-0.5 block text-[13px] text-muted-foreground/70">
-                              Anywhere · Any dates
-                            </span>
-                          )}
-                        </span>
-                      </a>
-                    </li>
+                    <VibeTile
+                      key={key}
+                      active={selected.has(key)}
+                      icon={vibe.icon}
+                      label={vibe.label}
+                      onClick={() => {
+                        setSelected((prev) => toggleVibeKey(prev, vibe));
+                        track("category_toggled", {
+                          category: vibe.label,
+                          selected: !selected.has(key),
+                        });
+                      }}
+                    />
                   );
                 })}
-              </ul>
-            </section>
-          )}
+              </div>
+            )}
+
+            {findMode === "describe" && <DescribePreview />}
+            {findMode === "handpicked" && <HandpickedPreview />}
+          </div>
         </main>
       </div>
 
-      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-background/95 backdrop-blur-sm">
-        <div className="mx-auto flex max-w-3xl items-center justify-between gap-4 px-6 py-4">
-          <p className="text-[14px] text-muted-foreground">
-            {canContinue
-              ? `${selectedCount} categor${selectedCount === 1 ? "y" : "ies"} selected`
-              : "Pick a category to begin"}
-          </p>
-          <button
-            type="button"
-            disabled={!canContinue}
-            onClick={() => {
-              track("category_continue", {
-                categories: labelsForVibeKeys(Array.from(selected)),
-                category_count: selectedCount,
-              });
-              prefillFromLastSearch();
-              setStep("search");
-            }}
-            className={[
-              "h-12 rounded-lg px-7 text-[16px] font-medium text-white transition-colors duration-200",
-              canContinue
-                ? "cursor-pointer bg-[#FF385C] hover:bg-[#E31C5F]"
-                : "cursor-not-allowed bg-[#FF385C]/40",
-            ].join(" ")}
-          >
-            Continue
-          </button>
+      {findMode === "categories" && (
+        <div className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-background/95 backdrop-blur-sm">
+          <div className="mx-auto flex max-w-3xl items-center justify-between gap-4 px-6 py-4">
+            <p className="text-[14px] text-muted-foreground">
+              {canContinue
+                ? `${selectedCount} categor${selectedCount === 1 ? "y" : "ies"} selected`
+                : "Pick a category to begin"}
+            </p>
+            <button
+              type="button"
+              disabled={!canContinue}
+              onClick={() => {
+                track("category_continue", {
+                  categories: labelsForVibeKeys(Array.from(selected)),
+                  category_count: selectedCount,
+                });
+                prefillFromLastSearch();
+                setStep("search");
+              }}
+              className={[
+                "h-12 rounded-lg px-7 text-[16px] font-medium text-white transition-colors duration-200",
+                canContinue
+                  ? "cursor-pointer bg-[#FF385C] hover:bg-[#E31C5F]"
+                  : "cursor-not-allowed bg-[#FF385C]/40",
+              ].join(" ")}
+            >
+              Continue
+            </button>
+          </div>
         </div>
-      </div>
+      )}
 
-      {showCategoryRequest && (
+      {showFeatureRequest && (
         <MissingFilterModal
           visitorId={visitorId}
-          eyebrow="Request a category"
-          onClose={() => setShowCategoryRequest(false)}
+          eyebrow="Request a feature"
+          onClose={() => setShowFeatureRequest(false)}
         />
       )}
     </div>
