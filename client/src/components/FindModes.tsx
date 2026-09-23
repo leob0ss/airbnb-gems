@@ -1,9 +1,11 @@
 import { identifyVisitor, track } from "@/lib/analytics";
+import { submitInBackground } from "@/lib/filterRequest";
 import { HANDPICKED_STAYS } from "@/lib/handpicked";
 import { openListingUrl } from "@/lib/openListingUrl";
 import { getVisitorId } from "@/lib/visitorId";
 import { ArrowRight, BadgeCheck, Gem, LayoutGrid, Sparkles, X } from "lucide-react";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 
 export type FindMode = "categories" | "describe" | "handpicked";
 
@@ -126,12 +128,21 @@ function FeatureInterestModal({
   detail?: string;
   onClose: () => void;
 }) {
-  const [step, setStep] = useState<"form" | "thanks">("form");
   const [email, setEmail] = useState("");
   const [emailError, setEmailError] = useState("");
-  const [submitError, setSubmitError] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const submitted = useRef(false);
+  /** One owner email per dialog: either the email signup or this fallback. */
+  const reported = useRef(false);
+
+  const reportWithoutEmail = useCallback(() => {
+    const query = detail?.trim();
+    if (reported.current || submitted.current || !query) return;
+    reported.current = true;
+    void submitInBackground(
+      { feature, whatLookingFor: query, visitorId: getVisitorId() },
+      { silent: true },
+    );
+  }, [detail, feature]);
 
   useEffect(() => {
     track("feature_waitlist_shown", {
@@ -141,6 +152,11 @@ function FeatureInterestModal({
       detail_length: detail?.trim().length ?? 0,
     });
   }, [detail, feature]);
+
+  useEffect(() => {
+    window.addEventListener("pagehide", reportWithoutEmail);
+    return () => window.removeEventListener("pagehide", reportWithoutEmail);
+  }, [reportWithoutEmail]);
 
   function validateEmail(val: string) {
     if (!val.trim()) return "Please enter your email address.";
@@ -155,11 +171,12 @@ function FeatureInterestModal({
         feature,
         has_detail: Boolean(detail?.trim()),
       });
+      reportWithoutEmail();
     }
     onClose();
   }
 
-  async function handleSubmit(e: React.FormEvent) {
+  function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const err = validateEmail(email);
     if (err) {
@@ -167,45 +184,27 @@ function FeatureInterestModal({
       return;
     }
 
-    setIsSubmitting(true);
-    setSubmitError("");
+    const trimmedEmail = email.trim();
+    submitted.current = true;
+    reported.current = true;
+    identifyVisitor({ email: trimmedEmail });
+    track("feature_waitlist", {
+      feature,
+      has_detail: Boolean(detail?.trim()),
+      detail: detail?.trim() || undefined,
+      detail_length: detail?.trim().length ?? 0,
+    });
+    toast.success("You’re on the list. We’ll email you when it’s ready.");
+    onClose();
 
-    try {
-      const response = await fetch("/api/filter-request", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          feature,
-          whatLookingFor: detail?.trim() || feature,
-          email: email.trim(),
-          visitorId: getVisitorId(),
-        }),
-      });
-      const data = (await response.json()) as {
-        success?: boolean;
-        error?: string;
-      };
-      if (!response.ok || !data.success) {
-        const error = data.error ?? "Something went wrong. Please try again.";
-        track("feature_waitlist_failed", { feature, error });
-        setSubmitError(error);
-        return;
-      }
-      submitted.current = true;
-      identifyVisitor({ email: email.trim() });
-      track("feature_waitlist", {
-        feature,
-        has_detail: Boolean(detail?.trim()),
-        detail: detail?.trim() || undefined,
-        detail_length: detail?.trim().length ?? 0,
-      });
-      setStep("thanks");
-    } catch {
-      track("feature_waitlist_failed", { feature, error: "network" });
-      setSubmitError("Something went wrong. Please try again.");
-    } finally {
-      setIsSubmitting(false);
-    }
+    void submitInBackground({
+      feature,
+      whatLookingFor: detail?.trim() || feature,
+      email: trimmedEmail,
+      visitorId: getVisitorId(),
+    }).then((error) => {
+      if (error) track("feature_waitlist_failed", { feature, error });
+    });
   }
 
   return (
@@ -226,7 +225,7 @@ function FeatureInterestModal({
               {FEATURE_STARTED_ON}
             </p>
             <h2 className="text-lg font-semibold leading-snug">
-              {step === "form" ? "Coming soon…" : "You’re on the list"}
+              Coming soon…
             </h2>
           </div>
           <button
@@ -239,8 +238,7 @@ function FeatureInterestModal({
           </button>
         </div>
 
-        {step === "form" ? (
-          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             <p className="text-sm leading-relaxed text-background/70">
               We’re actively building this feature. If you want to be notified
               when it’s available, leave your email and we’ll let you know. No
@@ -265,31 +263,14 @@ function FeatureInterestModal({
                 <p className="text-xs text-red-400">{emailError}</p>
               )}
             </div>
-            {submitError && (
-              <p className="text-xs text-red-400">{submitError}</p>
-            )}
             <button
               type="submit"
-              disabled={!email.trim() || isSubmitting}
+              disabled={!email.trim()}
               className="w-full rounded-xl bg-background py-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-background/90 disabled:opacity-40"
             >
-              {isSubmitting ? "Sending…" : "Notify me"}
+              Notify me
             </button>
           </form>
-        ) : (
-          <div className="flex flex-col gap-3">
-            <p className="text-sm leading-relaxed text-background/70">
-              We’ll email you when this feature is ready.
-            </p>
-            <button
-              type="button"
-              onClick={handleClose}
-              className="w-full rounded-xl bg-background py-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-background/90"
-            >
-              Close
-            </button>
-          </div>
-        )}
       </div>
     </div>
   );

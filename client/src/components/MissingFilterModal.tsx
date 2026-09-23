@@ -8,8 +8,10 @@
  * On submit: saves to DB via /api/filter-request and notifies the owner.
  */
 import { identifyVisitor, track } from "@/lib/analytics";
+import { submitInBackground } from "@/lib/filterRequest";
 import { X } from "lucide-react";
 import { useState } from "react";
+import { toast } from "sonner";
 
 interface MissingFilterModalProps {
   visitorId: string;
@@ -18,19 +20,14 @@ interface MissingFilterModalProps {
   eyebrow?: string;
 }
 
-type Step = "form" | "thanks";
-
 export default function MissingFilterModal({
   visitorId,
   onClose,
   eyebrow = "Missing your filter?",
 }: MissingFilterModalProps) {
-  const [step, setStep] = useState<Step>("form");
   const [whatLookingFor, setWhatLookingFor] = useState("");
   const [email, setEmail] = useState("");
   const [emailError, setEmailError] = useState("");
-  const [submitError, setSubmitError] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   function validateEmail(val: string) {
     if (!val) return ""; // optional
@@ -39,9 +36,10 @@ export default function MissingFilterModal({
       : "Please enter a valid email address.";
   }
 
-  async function handleSubmit(e: React.FormEvent) {
+  function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!whatLookingFor.trim()) return;
+    const request = whatLookingFor.trim();
+    if (!request) return;
 
     const err = validateEmail(email);
     if (err) {
@@ -49,44 +47,25 @@ export default function MissingFilterModal({
       return;
     }
 
-    setIsSubmitting(true);
-    setSubmitError("");
-
-    try {
-      const response = await fetch("/api/filter-request", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          whatLookingFor: whatLookingFor.trim(),
-          email: email.trim() || null,
-          visitorId,
-        }),
-      });
-
-      const data = (await response.json()) as {
-        success?: boolean;
-        error?: string;
-      };
-
-      if (!response.ok || !data.success) {
-        setSubmitError(data.error ?? "Something went wrong. Please try again.");
-        return;
-      }
-
-      if (email.trim()) {
-        identifyVisitor({ email: email.trim() });
-      }
-      track("filter_requested", {
-        has_email: Boolean(email.trim()),
-        request: whatLookingFor.trim(),
-        request_length: whatLookingFor.trim().length,
-      });
-      setStep("thanks");
-    } catch {
-      setSubmitError("Something went wrong. Please try again.");
-    } finally {
-      setIsSubmitting(false);
+    const trimmedEmail = email.trim();
+    if (trimmedEmail) {
+      identifyVisitor({ email: trimmedEmail });
     }
+    track("filter_requested", {
+      has_email: Boolean(trimmedEmail),
+      request,
+      request_length: request.length,
+    });
+    toast.success("Thanks — we got your request.");
+    onClose();
+
+    void submitInBackground({
+      whatLookingFor: request,
+      email: trimmedEmail || null,
+      visitorId,
+    }).then((error) => {
+      if (error) track("filter_request_failed", { error });
+    });
   }
 
   return (
@@ -112,9 +91,7 @@ export default function MissingFilterModal({
               {eyebrow}
             </p>
             <h2 className="text-lg font-semibold leading-snug">
-              {step === "form"
-                ? "Tell us what you're looking for"
-                : "Thanks — we'll be in touch! 🙏"}
+              Tell us what you're looking for
             </h2>
           </div>
           <button
@@ -126,8 +103,7 @@ export default function MissingFilterModal({
           </button>
         </div>
 
-        {step === "form" && (
-          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             {/* What are you looking for */}
             <div className="flex flex-col gap-1.5">
               <label className="text-sm font-medium text-background/80">
@@ -167,33 +143,14 @@ export default function MissingFilterModal({
               )}
             </div>
 
-            {submitError && (
-              <p className="text-xs text-red-400">{submitError}</p>
-            )}
             <button
               type="submit"
-              disabled={!whatLookingFor.trim() || isSubmitting}
+              disabled={!whatLookingFor.trim()}
               className="w-full py-2.5 rounded-xl text-sm font-semibold bg-background text-foreground hover:bg-background/90 disabled:opacity-40 transition-colors"
             >
-              {isSubmitting ? "Sending…" : "Send"}
+              Send
             </button>
           </form>
-        )}
-
-        {step === "thanks" && (
-          <div className="flex flex-col gap-3">
-            <p className="text-sm text-background/70 leading-relaxed">
-              We've received your request. If you left your email, we'll reach
-              out when we add support for what you're looking for.
-            </p>
-            <button
-              onClick={onClose}
-              className="w-full py-2.5 rounded-xl text-sm font-semibold bg-background text-foreground hover:bg-background/90 transition-colors"
-            >
-              Close
-            </button>
-          </div>
-        )}
       </div>
     </div>
   );

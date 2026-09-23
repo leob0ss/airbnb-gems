@@ -111,9 +111,12 @@ export async function submitFilterRequest(
       parsed.whatLookingFor !== parsed.feature
         ? `\nTheir search: "${parsed.whatLookingFor}"`
         : "";
+    const title = parsed.email
+      ? `Feature waitlist: ${parsed.feature}`
+      : `${parsed.feature} search (no email): "${parsed.whatLookingFor.slice(0, 60)}"`;
     await notifyOwner({
-      title: `Feature waitlist: ${parsed.feature}`,
-      content: `Feature requested: ${parsed.feature}${detailLine}${emailLine}${visitorLine}`,
+      title,
+      content: `Feature requested: ${parsed.feature}${detailLine}${emailLine || "\nEmail: not provided"}${visitorLine}`,
     });
   } else {
     await notifyOwner({

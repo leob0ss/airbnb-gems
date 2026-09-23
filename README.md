@@ -18,7 +18,7 @@ Current tiles:
 | Property types | Cabin, Villa, Treehouse, Castle, Cave, Dome, Hut, Earth home, Tiny Homes, Boat (includes Houseboat), Island, Farm stay |
 | Airbnb tags | Beachfront, Tower, A-frame, OMG!, Design |
 
-**Describe** accepts a free-text stay request. **Handpicked** shows a small curated set of unusual listings. Search and Show more on those tabs collect email interest through the same `/api/filter-request` path as “Missing a feature?” — owner mail is titled `Feature waitlist: <feature>` so you can tell which one they asked for.
+**Describe** accepts a free-text stay request. **Handpicked** shows a small curated set of unusual listings. Search and Show more on those tabs collect email interest through the same `/api/filter-request` path as “Missing a feature?” — owner mail is titled `Feature waitlist: <feature>` so you can tell which one they asked for. If a Describe visitor closes the dialog (or the tab) without leaving an email, you still get one `Describe search (no email): "<query>"` message — never both.
 
 Last search inputs are still remembered in `localStorage` and prefilled on the next Categories run. The previous-searches list is gone.
 
@@ -66,7 +66,7 @@ Autocapture is off. Pageviews are on. Custom events for the homepage:
 | `missing_feature_clicked` | “Missing a feature?” (`source`, `find_mode`) |
 | `feature_waitlist_shown` / `_dismissed` / `_failed` | Waitlist dialog lifecycle |
 | `feature_waitlist` | Client-side waitlist signup |
-| `filter_requested` | Missing-feature / filter dialog submit |
+| `filter_requested` / `filter_request_failed` | Missing-feature / filter dialog submit (the dialog closes immediately; the save runs in the background) |
 | `feature_waitlist_saved` / `filter_request_saved` | Server confirmation after Neon write |
 
 ## Updating listings
