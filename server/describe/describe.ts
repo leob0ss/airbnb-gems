@@ -1,5 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { ENV } from "../_core/env.js";
+import { notifyOwner } from "../_core/notification.js";
 import { captureServerEvent } from "../_core/posthog.js";
 import { CATALOG, CATALOG_BY_KEY, CATALOG_KEYS, type CatalogFilter } from "./catalog.js";
 
@@ -191,6 +192,28 @@ export function buildSearchUrl(r: Interpretation): string {
   return `https://www.airbnb.com/s/homes?${qs.toString()}`;
 }
 
+function searchEmail(
+  query: string,
+  r: Interpretation,
+  url: string,
+  visitorId: string | null,
+): { title: string; content: string } {
+  const labels = chosenFilters(r).map((key) => CATALOG_BY_KEY.get(key)?.label ?? key);
+  const unmatched = unmatchedWishes(r);
+  const lines = [
+    `Their search: "${query}"`,
+    `Filters: ${labels.join(", ") || "none"}`,
+    unmatched.length ? `Couldn't filter: ${unmatched.join(", ")}` : "",
+    `Claude's read: ${r.summary}`,
+    `Airbnb link: ${url}`,
+    visitorId ? `Visitor: ${visitorId}` : "",
+  ];
+  return {
+    title: `Describe search: "${query.slice(0, 60)}"`,
+    content: lines.filter(Boolean).join("\n"),
+  };
+}
+
 export async function handleDescribeRequest(request: Request): Promise<Response> {
   const body = (await request.json().catch(() => ({}))) as {
     query?: unknown;
@@ -218,6 +241,7 @@ export async function handleDescribeRequest(request: Request): Promise<Response>
         .join(" | "),
       url,
     });
+    await notifyOwner(searchEmail(query, result, url, visitorId));
     return Response.json({ success: true, url });
   } catch (error) {
     console.error("[Describe] failed:", error);
