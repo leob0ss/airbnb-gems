@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
+import { CATALOG_BY_KEY } from "./catalog";
 import { buildSearchUrl, type Interpretation } from "./describe";
+import { WORDS } from "./words";
 
 const base: Interpretation = {
   place: "",
@@ -12,8 +14,7 @@ const base: Interpretation = {
   pets: false,
   priceMaxPerNight: 0,
   minBedrooms: 0,
-  filters: [],
-  unmatched: [],
+  wishes: [],
   summary: "",
 };
 
@@ -29,7 +30,18 @@ describe("buildSearchUrl", () => {
       adults: 2,
       pets: true,
       priceMaxPerNight: 200,
-      filters: ["cabin", "treehouse", "hot-tub"],
+      wishes: [
+        {
+          phrase: "cabin or treehouse",
+          matches: [
+            { filter: "cabin", word: "cabin" },
+            { filter: "treehouse", word: "treehouse" },
+          ],
+        },
+        { phrase: "hot tub", matches: [{ filter: "hot-tub", word: "hot tub" }] },
+        { phrase: "near hiking trails", matches: [] },
+        { phrase: "cozy cabin", matches: [{ filter: "cabin", word: "cabin" }] },
+      ],
     });
     expect(qs.get("query")).toBe("Asheville, NC");
     expect(qs.get("checkin")).toBe("2026-10-09");
@@ -58,5 +70,11 @@ describe("buildSearchUrl", () => {
   it("leaves out everything that wasn't asked for", () => {
     const qs = params({});
     expect([...qs.keys()]).toEqual(["refinement_paths[]", "search_mode", "currency"]);
+  });
+});
+
+describe("words", () => {
+  it("only describes filters that exist in the catalog", () => {
+    expect(Object.keys(WORDS).filter((key) => !CATALOG_BY_KEY.has(key))).toEqual([]);
   });
 });

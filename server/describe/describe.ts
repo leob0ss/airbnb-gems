@@ -1,9 +1,9 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { ENV } from "../_core/env.js";
 import { captureServerEvent } from "../_core/posthog.js";
-import { CATALOG, CATALOG_BY_KEY, CATALOG_KEYS } from "./catalog.js";
+import { CATALOG, CATALOG_BY_KEY, CATALOG_KEYS, type CatalogFilter } from "./catalog.js";
 
-const MODEL = "claude-haiku-4-5";
+const MODEL = "claude-sonnet-5-5";
 
 const MONTHS = [
   "january", "february", "march", "april", "may", "june",
@@ -26,18 +26,20 @@ export type Interpretation = {
   summary: string;
 };
 
-/** One thing the traveller asked for, and the filters chosen for it. */
+/**
+ * One thing the traveller asked for, and the filters it turned on with the
+ * label or listed word each one matched. No matches means Airbnb can't filter it.
+ */
 export type Wish = {
   phrase: string;
-  kind: "specific" | "vibe";
-  filters: string[];
+  matches: { filter: string; word: string }[];
 };
 
-const chosenFilters = (r: Interpretation) =>
-  Array.from(new Set(r.wishes.flatMap((w) => w.filters)));
+export const chosenFilters = (r: Interpretation) =>
+  Array.from(new Set(r.wishes.flatMap((w) => w.matches.map((m) => m.filter))));
 
 const unmatchedWishes = (r: Interpretation) =>
-  r.wishes.filter((w) => w.filters.length === 0).map((w) => w.phrase);
+  r.wishes.filter((w) => w.matches.length === 0).map((w) => w.phrase);
 
 const SCHEMA = {
   type: "object",
@@ -58,36 +60,66 @@ const SCHEMA = {
     pets: { type: "boolean" },
     priceMaxPerNight: { type: "integer" },
     minBedrooms: { type: "integer" },
-    filters: { type: "array", items: { type: "string", enum: CATALOG_KEYS } },
-    unmatched: { type: "array", items: { type: "string" } },
+    wishes: {
+      type: "array",
+      items: {
+        type: "object",
+        additionalProperties: false,
+        required: ["phrase", "matches"],
+        properties: {
+          phrase: { type: "string" },
+          matches: {
+            type: "array",
+            items: {
+              type: "object",
+              additionalProperties: false,
+              required: ["filter", "word"],
+              properties: {
+                filter: { type: "string", enum: CATALOG_KEYS },
+                word: { type: "string" },
+              },
+            },
+          },
+        },
+      },
+    },
     summary: { type: "string" },
   },
 };
 
-function systemPrompt(today: string): string {
-  const catalog = CATALOG.map(
-    (f) => `- ${f.key}: ${f.label}${f.hint ? ` (${f.hint})` : ""}`,
-  ).join("\n");
+function describeFilter(f: CatalogFilter): string {
+  const parts = [`- ${f.key}: ${f.label}`];
+  if (f.hint) parts.push(`(${f.hint})`);
+  if (f.exact?.length) parts.push(`| exact: ${f.exact.join(", ")}`);
+  if (f.closeEnough?.length) parts.push(`| close enough: ${f.closeEnough.join(", ")}`);
+  return parts.join(" ");
+}
 
+function systemPrompt(today: string): string {
   return `You turn a traveller's description of the Airbnb stay they want into Airbnb search filters.
 
 Today is ${today}.
 
-Rules:
-- Only use filters the traveller asked for or clearly implied. Every filter removes listings, so most searches need 0-4.
-- place: a searchable place name like "Asheville, NC" or "Yosemite National Park", or "" if none.
+Fields:
+- place: a searchable place name like "Asheville, NC" or "Yosemite National Park", or "" if none. If several places are named ("North Carolina or Virginia"), use one region that covers them ("Blue Ridge Mountains").
 - Exact dates go in checkin/checkout as YYYY-MM-DD. Vague timing like "a weekend in October" uses flexibleLength + flexibleMonths instead. flexibleLength is the trip length: "month" only for month-long stays; if only a month is named ("in December"), use "week". Otherwise leave dates "" and flexibleLength "none".
-- A couple or romantic trip means 2 adults. pets is true for dog-friendly or travelling with a pet.
-- priceMaxPerNight is USD per night, 0 for no limit. minBedrooms is 0 unless stated or implied by group size.
-- Several property types can be picked together; Airbnb shows any of them.
-- unmatched: short phrases for wishes that neither a field above nor a filter captures, e.g. "near hiking trails", "great view". Don't list anything you already set, and never pretend a filter covers a wish.
+- adults is the number of adults stated or implied (a couple or romantic trip means 2), otherwise 0. pets is true for dog-friendly or travelling with a pet.
+- priceMaxPerNight is USD per night, 0 for no limit. "Affordable", "cheap" or "budget" without a number means 150.
+- minBedrooms is 0 unless stated or implied by group size. "Big house" without a number means 4; that is all it sets.
+
+Wishes and filters:
+- wishes: split everything else the traveller wants into short phrases in their words. Skip anything a field above already covers (guests, pets, price, bedrooms, place, dates).
+- Filters may list exact words (they name the thing) and close-enough phrases (they strongly imply it).
+- A wish turns on a filter only when it means the same as that filter's label, one of its exact words or one of its close-enough phrases. Similar wording or another language counts; being merely related does not. A generic word like "games" doesn't match every filter whose label contains it.
+- For each filter a wish turns on, give the label, exact word or close-enough phrase it matched in "word". If you can't name one from that filter's own entry, leave the filter out.
+- One wish can turn on several filters, whatever their group, as long as each passes that check. A wish that matches nothing gets no matches.
 - summary: one short, friendly sentence describing the search.
 
 Filters:
-${catalog}`;
+${CATALOG.map(describeFilter).join("\n")}`;
 }
 
-async function interpret(query: string): Promise<Interpretation> {
+export async function interpret(query: string): Promise<Interpretation> {
   const today = new Date().toLocaleDateString("en-US", {
     timeZone: "America/Los_Angeles",
     weekday: "long",
@@ -98,13 +130,13 @@ async function interpret(query: string): Promise<Interpretation> {
   const client = new Anthropic({ apiKey: ENV.anthropicApiKey });
   const message = await client.messages.create({
     model: MODEL,
-    max_tokens: 1024,
+    max_tokens: 4096,
     system: systemPrompt(today),
     messages: [{ role: "user", content: query }],
     output_config: { format: { type: "json_schema", schema: SCHEMA } },
   });
-  const block = message.content[0];
-  if (block?.type !== "text") throw new Error("Claude returned no text");
+  const block = message.content.find((b) => b.type === "text");
+  if (!block) throw new Error(`Claude returned no text (stop reason: ${message.stop_reason})`);
   return JSON.parse(block.text);
 }
 
@@ -148,7 +180,7 @@ export function buildSearchUrl(r: Interpretation): string {
   }
   if (r.minBedrooms > 0) qs.set("min_bedrooms", String(r.minBedrooms));
 
-  for (const key of Array.from(new Set(r.filters))) {
+  for (const key of chosenFilters(r)) {
     for (const [name, value] of CATALOG_BY_KEY.get(key)?.params ?? []) {
       qs.append(name, value);
     }
@@ -179,8 +211,11 @@ export async function handleDescribeRequest(request: Request): Promise<Response>
     captureServerEvent("describe_search_interpreted", visitorId, {
       query,
       summary: result.summary,
-      filters: result.filters.join(","),
-      unmatched: result.unmatched.join(" | "),
+      filters: chosenFilters(result).join(","),
+      unmatched: unmatchedWishes(result).join(" | "),
+      wishes: result.wishes
+        .map((w) => `${w.phrase} → ${w.matches.map((m) => `${m.filter} (${m.word})`).join(", ") || "none"}`)
+        .join(" | "),
       url,
     });
     return Response.json({ success: true, url });

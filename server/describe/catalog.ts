@@ -1,8 +1,12 @@
 /**
  * Every Airbnb filter the Describe search may turn on, with the URL params it
  * adds. IDs were read from Airbnb's filter panel data or verified by result
- * counts (Sept 2026). Airbnb does not document these and can change them.
+ * counts (Sept–Oct 2026). Airbnb does not document these and can change them.
+ * An unknown amenity ID makes Airbnb show an error page, so only add IDs that
+ * have been checked against live results.
  */
+
+import { WORDS } from "./words.js";
 
 export type FilterGroup =
   | "place-type"
@@ -21,6 +25,10 @@ export type CatalogFilter = {
   group: FilterGroup;
   /** Extra guidance for Claude on when this filter applies. */
   hint?: string;
+  /** Words that name the thing itself; from words.ts. */
+  exact?: string[];
+  /** Phrases that strongly imply it; from words.ts. */
+  closeEnough?: string[];
   params: [string, string][];
 };
 
@@ -72,7 +80,7 @@ const language = (code: string, label: string): CatalogFilter => ({
   params: [["host_languages[]", code]],
 });
 
-export const CATALOG: CatalogFilter[] = [
+const BASE_CATALOG: CatalogFilter[] = [
   {
     key: "entire-home",
     label: "Entire home",
@@ -122,7 +130,7 @@ export const CATALOG: CatalogFilter[] = [
   propertyType("camper", "Camper/RV", 32),
   propertyType("hut", "Hut", 24),
   propertyType("shepherds-hut", "Shepherd's hut", 66),
-  propertyType("earth-home", "Earth home", 23, "hobbit-style homes built into the ground"),
+  propertyType("earth-home", "Earth home", 23),
   propertyType("barn", "Barn", 57),
   propertyType("farm-stay", "Farm stay", 63),
   propertyType("boat", "Boat", 8),
@@ -150,15 +158,25 @@ export const CATALOG: CatalogFilter[] = [
   amenity("tv", "TV", 58),
   amenity("hair-dryer", "Hair dryer", 45),
   amenity("iron", "Iron", 46),
-  amenity("workspace", "Dedicated workspace", 47, "amenity", "remote work, a desk"),
+  amenity("workspace", "Dedicated workspace", 47),
   amenity("pool", "Pool", 7),
-  amenity("hot-tub", "Hot tub", 25, "amenity", "jacuzzi, spa tub"),
+  amenity("hot-tub", "Hot tub", 25, "amenity", "not an indoor jetted bathtub (\"jacuzzi tub\")"),
+  amenity("sauna", "Sauna", 223),
   amenity("free-parking", "Free parking", 9),
   amenity("ev-charger", "EV charger", 97),
   amenity("gym", "Gym", 15),
   amenity("bbq", "BBQ grill", 99),
   amenity("breakfast", "Breakfast", 16),
-  amenity("fireplace", "Indoor fireplace", 27, "amenity", "cozy, wood stove"),
+  amenity("fireplace", "Indoor fireplace", 27),
+  amenity("fire-pit", "Fire pit", 219),
+  amenity("patio-balcony", "Patio or balcony", 100),
+  amenity("game-room", "Game room", 446),
+  amenity("pool-table", "Pool table", 521),
+  amenity("game-console", "Game console", 75),
+  amenity("arcade", "Arcade games", 371),
+  amenity("board-games", "Board games", 392),
+  amenity("movie-theater", "Movie theater", 459),
+  amenity("playroom", "Children's playroom", 363),
   amenity("crib", "Crib", 286, "amenity", "travelling with a baby"),
   amenity("king-bed", "King-size bed", 1000),
   amenity("elevator", "Elevator", 21),
@@ -169,11 +187,12 @@ export const CATALOG: CatalogFilter[] = [
   tag("waterfront", "Waterfront", 686, "location", "on a lake, river or sea"),
   tag("beachfront", "Beachfront", 789, "location", "directly on a beach"),
   tag("ski-in-out", "Ski-in/ski-out", 681, "location", "direct access to ski slopes"),
+  amenity("lake-access", "Lake access", 133, "location"),
 
   tag("a-frame", "A-frame", 8148, "category"),
   tag("tower", "Tower", 8187, "category"),
   tag("design", "Design", 8528, "category", "architecturally striking homes"),
-  tag("omg", "OMG!", 8225, "category", "wildly unusual, one-of-a-kind stays"),
+  tag("omg", "OMG!", 8225, "category", "wildly unusual stays"),
 
   {
     key: "guest-favorite",
@@ -246,6 +265,8 @@ export const CATALOG: CatalogFilter[] = [
   language("sv", "Swedish"),
   language("sgn", "Sign Language"),
 ];
+
+export const CATALOG: CatalogFilter[] = BASE_CATALOG.map((f) => ({ ...f, ...WORDS[f.key] }));
 
 export const CATALOG_BY_KEY = new Map(CATALOG.map((f) => [f.key, f]));
 

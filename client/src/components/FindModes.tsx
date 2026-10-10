@@ -16,12 +16,6 @@ const EXAMPLE_PROMPTS = [
   "A typical NYC loft — exposed brick, big windows, industrial but warm.",
 ];
 
-const SEARCH_PHASES = [
-  "Reading your request…",
-  "Thinking…",
-  "Looking for matching Airbnb filters…",
-];
-const SEARCH_PHASE_MS = 1400;
 /** How long "Opening Airbnb…" shows before the tab opens. */
 const OPENING_MS = 600;
 
@@ -290,22 +284,11 @@ export function DescribePreview() {
   const [query, setQuery] = useState("");
   const [focused, setFocused] = useState(false);
   const [interestOpen, setInterestOpen] = useState(false);
-  /** Index into SEARCH_PHASES while a search runs, null when idle. */
-  const [phase, setPhase] = useState<number | null>(null);
+  const [searching, setSearching] = useState(false);
   const [opening, setOpening] = useState(false);
-  const busy = phase !== null;
-  const buttonLabel = opening
-    ? "Opening Airbnb…"
-    : busy
-      ? SEARCH_PHASES[phase]
-      : null;
+  const busy = searching || opening;
+  const buttonLabel = opening ? "Opening Airbnb…" : searching ? "Thinking…" : null;
   const rotating = !query && !focused;
-
-  useEffect(() => {
-    if (phase === null || opening || phase >= SEARCH_PHASES.length - 1) return;
-    const id = window.setTimeout(() => setPhase(phase + 1), SEARCH_PHASE_MS);
-    return () => window.clearTimeout(id);
-  }, [phase, opening]);
 
   useEffect(() => {
     if (!rotating) return;
@@ -336,7 +319,7 @@ export function DescribePreview() {
     });
     if (!q || busy) return;
 
-    setPhase(0);
+    setSearching(true);
     let url: string;
     try {
       const response = await fetch("/api/describe", {
@@ -348,17 +331,17 @@ export function DescribePreview() {
       if (!data.success) throw new Error(data.error);
       url = data.url;
     } catch {
-      setPhase(null);
+      setSearching(false);
       setInterestOpen(true);
       return;
     }
 
+    setSearching(false);
     setOpening(true);
     await new Promise((resolve) => window.setTimeout(resolve, OPENING_MS));
     track("describe_search_opened", { query: q, url });
     openUrlAfterSearch(url);
     setOpening(false);
-    setPhase(null);
   }
 
   return (
