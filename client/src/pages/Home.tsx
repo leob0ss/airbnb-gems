@@ -2,10 +2,8 @@ import BrandMark from "@/components/BrandMark";
 import {
   DescribePreview,
   FindModeTabs,
-  HandpickedPreview,
   type FindMode,
 } from "@/components/FindModes";
-import MissingFilterModal from "@/components/MissingFilterModal";
 import {
   buildAirbnbSearchUrl,
   searchPlaces,
@@ -19,7 +17,6 @@ import {
   loadPreviousSearches,
   savePreviousSearch,
 } from "@/lib/searchHistory";
-import { getVisitorId } from "@/lib/visitorId";
 import { ALL_VIBES, vibeKey } from "@/lib/vibes";
 import { differenceInCalendarDays, format, isBefore, parseISO, startOfDay } from "date-fns";
 import {
@@ -267,8 +264,6 @@ export default function Home() {
   const [range, setRange] = useState<DateRange | undefined>();
   const [guests, setGuests] = useState("");
   const [findMode, setFindMode] = useState<FindMode>("categories");
-  const [showFeatureRequest, setShowFeatureRequest] = useState(false);
-  const visitorId = useMemo(() => getVisitorId(), []);
 
   const selectedCount = selected.size;
   const canContinue = selectedCount > 0;
@@ -492,20 +487,15 @@ export default function Home() {
           <h1 className="sr-only">Airbnb Gems</h1>
           <BrandMark />
           <p className="mx-auto mt-4 max-w-lg text-[15px] leading-relaxed text-muted-foreground">
-            Better ways to search for your perfect Airbnb.{" "}
-            <button
-              type="button"
-              onClick={() => {
-                track("missing_feature_clicked", {
-                  source: "homepage_tagline",
-                  find_mode: findMode,
-                });
-                setShowFeatureRequest(true);
-              }}
+            Better ways to search for your perfect Airbnb. A tool by{" "}
+            <a
+              href="https://www.leochazalon.com/"
+              target="_blank"
+              rel="noopener noreferrer"
               className="underline underline-offset-2 hover:text-foreground"
             >
-              Missing a feature?
-            </button>
+              Leo
+            </a>
           </p>
         </header>
 
@@ -542,7 +532,6 @@ export default function Home() {
             )}
 
             {findMode === "describe" && <DescribePreview />}
-            {findMode === "handpicked" && <HandpickedPreview />}
           </div>
         </main>
       </div>
@@ -577,14 +566,6 @@ export default function Home() {
             </button>
           </div>
         </div>
-      )}
-
-      {showFeatureRequest && (
-        <MissingFilterModal
-          visitorId={visitorId}
-          eyebrow="Request a feature"
-          onClose={() => setShowFeatureRequest(false)}
-        />
       )}
     </div>
   );

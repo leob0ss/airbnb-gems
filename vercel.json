@@ -37,6 +37,9 @@
     },
     "api/paywall.ts": {
       "includeFiles": "server/paywall/**,server/_core/env.ts,server/_core/notification.ts,server/_core/pacificTime.ts"
+    },
+    "api/describe.ts": {
+      "includeFiles": "server/describe/**,server/_core/env.ts,server/_core/posthog.ts"
     }
   }
 }

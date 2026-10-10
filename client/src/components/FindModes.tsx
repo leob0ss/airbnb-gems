@@ -1,13 +1,13 @@
 import { identifyVisitor, track } from "@/lib/analytics";
 import { submitInBackground } from "@/lib/filterRequest";
-import { HANDPICKED_STAYS } from "@/lib/handpicked";
-import { openListingUrl } from "@/lib/openListingUrl";
+import { openUrlAfterSearch } from "@/lib/openListingUrl";
 import { getVisitorId } from "@/lib/visitorId";
-import { ArrowRight, BadgeCheck, Gem, LayoutGrid, Sparkles, X } from "lucide-react";
+import { motion } from "framer-motion";
+import { ArrowRight, LayoutGrid, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
-export type FindMode = "categories" | "describe" | "handpicked";
+export type FindMode = "categories" | "describe";
 
 const EXAMPLE_PROMPTS = [
   "A place that feels like a Studio Ghibli film",
@@ -16,14 +16,22 @@ const EXAMPLE_PROMPTS = [
   "A typical NYC loft — exposed brick, big windows, industrial but warm.",
 ];
 
-const PROMPT_INTERVAL_MS = 3800;
+const SEARCH_PHASES = [
+  "Reading your request…",
+  "Thinking…",
+  "Looking for matching Airbnb filters…",
+];
+const SEARCH_PHASE_MS = 1400;
+/** How long "Opening Airbnb…" shows before the tab opens. */
+const OPENING_MS = 600;
+
+const PROMPT_INTERVAL_MS = 1900;
 /** Keep in sync with the exit animation duration below. */
 const PROMPT_EXIT_MS = 300;
 
 const MODES: { mode: FindMode; label: string; icon: typeof LayoutGrid }[] = [
   { mode: "categories", label: "Categories", icon: LayoutGrid },
   { mode: "describe", label: "Describe", icon: Sparkles },
-  { mode: "handpicked", label: "Handpicked", icon: Gem },
 ];
 
 type Pill = { x: number; width: number };
@@ -282,7 +290,22 @@ export function DescribePreview() {
   const [query, setQuery] = useState("");
   const [focused, setFocused] = useState(false);
   const [interestOpen, setInterestOpen] = useState(false);
+  /** Index into SEARCH_PHASES while a search runs, null when idle. */
+  const [phase, setPhase] = useState<number | null>(null);
+  const [opening, setOpening] = useState(false);
+  const busy = phase !== null;
+  const buttonLabel = opening
+    ? "Opening Airbnb…"
+    : busy
+      ? SEARCH_PHASES[phase]
+      : null;
   const rotating = !query && !focused;
+
+  useEffect(() => {
+    if (phase === null || opening || phase >= SEARCH_PHASES.length - 1) return;
+    const id = window.setTimeout(() => setPhase(phase + 1), SEARCH_PHASE_MS);
+    return () => window.clearTimeout(id);
+  }, [phase, opening]);
 
   useEffect(() => {
     if (!rotating) return;
@@ -304,14 +327,38 @@ export function DescribePreview() {
     return () => window.clearTimeout(id);
   }, [leaving]);
 
-  function captureInterest() {
+  async function search() {
     const q = query.trim();
     track("describe_search_submitted", {
       has_query: Boolean(q),
       query: q || undefined,
       query_length: q.length,
     });
-    setInterestOpen(true);
+    if (!q || busy) return;
+
+    setPhase(0);
+    let url: string;
+    try {
+      const response = await fetch("/api/describe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query: q, visitorId: getVisitorId() }),
+      });
+      const data = await response.json();
+      if (!data.success) throw new Error(data.error);
+      url = data.url;
+    } catch {
+      setPhase(null);
+      setInterestOpen(true);
+      return;
+    }
+
+    setOpening(true);
+    await new Promise((resolve) => window.setTimeout(resolve, OPENING_MS));
+    track("describe_search_opened", { query: q, url });
+    openUrlAfterSearch(url);
+    setOpening(false);
+    setPhase(null);
   }
 
   return (
@@ -324,7 +371,7 @@ export function DescribePreview() {
         className="flex items-center gap-3 rounded-2xl border border-border px-4 py-3.5 focus-within:border-foreground"
         onSubmit={(e) => {
           e.preventDefault();
-          captureInterest();
+          void search();
         }}
       >
         <Sparkles
@@ -359,126 +406,43 @@ export function DescribePreview() {
             className="relative w-full bg-transparent text-[16px] text-foreground outline-none placeholder:text-muted-foreground/60"
           />
         </div>
-        <button
+        <motion.button
+          layout
+          transition={{ type: "spring", stiffness: 500, damping: 38 }}
           type="submit"
-          aria-label="Search"
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#FF385C] text-white transition-colors hover:bg-[#E31C5F]"
+          aria-label={buttonLabel ?? "Search"}
+          aria-busy={busy}
+          disabled={busy}
+          className={[
+            "flex h-9 shrink-0 items-center justify-center gap-2 rounded-full bg-[#FF385C] text-white transition-colors hover:bg-[#E31C5F] disabled:cursor-default",
+            buttonLabel ? "px-4" : "w-9",
+          ].join(" ")}
         >
-          <ArrowRight className="h-[18px] w-[18px]" strokeWidth={3} />
-        </button>
+          {buttonLabel ? (
+            <>
+              <Loader2
+                className="h-4 w-4 shrink-0 animate-spin"
+                strokeWidth={2.5}
+              />
+              <motion.span
+                layout="position"
+                key={buttonLabel}
+                aria-live="polite"
+                className="whitespace-nowrap text-[13px] font-medium animate-in fade-in duration-300"
+              >
+                {buttonLabel}
+              </motion.span>
+            </>
+          ) : (
+            <ArrowRight className="h-[18px] w-[18px]" strokeWidth={3} />
+          )}
+        </motion.button>
       </form>
 
       {interestOpen && (
         <FeatureInterestModal
           feature="Describe"
           detail={query}
-          onClose={() => setInterestOpen(false)}
-        />
-      )}
-    </section>
-  );
-}
-
-export function HandpickedPreview() {
-  const [interestOpen, setInterestOpen] = useState(false);
-
-  function captureInterest() {
-    track("handpicked_show_more_clicked", {
-      listing_count: HANDPICKED_STAYS.length,
-    });
-    setInterestOpen(true);
-  }
-
-  return (
-    <section aria-label="Handpicked stays" className="flex flex-col gap-5">
-      <div>
-        <h2
-          className="text-[22px] leading-tight text-foreground"
-          style={{ fontFamily: '"Playfair Display", serif' }}
-        >
-          The shortlist
-        </h2>
-        <p className="mt-1 text-[15px] text-muted-foreground">
-          A small set of stays we have picked by hand, held to our highest bar.
-        </p>
-      </div>
-
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-        {["Genuinely one of a kind", "Loved by guests", "Vetted by us"].map(
-          (criterion) => (
-            <span
-              key={criterion}
-              className="flex items-center gap-1.5 text-[13px] text-muted-foreground"
-            >
-              <BadgeCheck className="h-4 w-4 text-foreground" strokeWidth={2} />
-              {criterion}
-            </span>
-          ),
-        )}
-      </div>
-
-      <div className="grid grid-cols-2 gap-x-4 gap-y-6">
-        {HANDPICKED_STAYS.map((stay) => (
-          <article
-            key={stay.id}
-            className="listing-card group cursor-pointer"
-            onClick={() => {
-              track("handpicked_listing_opened", {
-                listing_id: stay.id,
-                title: stay.title,
-                location: stay.location,
-              });
-              openListingUrl(stay.airbnbUrl);
-            }}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                track("handpicked_listing_opened", {
-                  listing_id: stay.id,
-                  title: stay.title,
-                  location: stay.location,
-                });
-                openListingUrl(stay.airbnbUrl);
-              }
-            }}
-            role="link"
-            tabIndex={0}
-            aria-label={`View ${stay.title} on Airbnb`}
-          >
-            <div
-              className="card-image relative overflow-hidden rounded-xl bg-muted"
-              style={{ aspectRatio: "20/19" }}
-            >
-              <img
-                src={stay.imageUrl}
-                alt=""
-                className="h-full w-full object-cover"
-                loading="lazy"
-              />
-            </div>
-            <div className="mt-3">
-              <p className="line-clamp-2 text-sm font-semibold leading-snug text-foreground">
-                {stay.title}
-              </p>
-              <p className="mt-0.5 line-clamp-1 text-sm text-muted-foreground">
-                {stay.location}
-              </p>
-            </div>
-          </article>
-        ))}
-      </div>
-
-      <button
-        type="button"
-        onClick={captureInterest}
-        className="h-12 rounded-lg border border-foreground text-[16px] font-medium text-foreground transition-colors hover:bg-secondary"
-      >
-        Show more
-      </button>
-
-      {interestOpen && (
-        <FeatureInterestModal
-          feature="More handpicked stays"
           onClose={() => setInterestOpen(false)}
         />
       )}

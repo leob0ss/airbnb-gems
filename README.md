@@ -2,7 +2,7 @@
 
 In 2025, Airbnb quietly hid unique categories from its app. This tool brings them back.
 
-- **`/`** — Three ways to find a stay. **Categories** (default) opens Airbnb with hidden filters; **Describe** and **Handpicked** are on a waitlist.
+- **`/`** — Two ways to find a stay. **Categories** (default) and **Describe** both open Airbnb with the matching filters.
 - **`/v1`** — Original curated US catalog (treehouses + A-frames)
 
 We don't host bookings; searches and listing cards open official Airbnb pages.
@@ -18,7 +18,7 @@ Current tiles:
 | Property types | Cabin, Villa, Treehouse, Castle, Cave, Dome, Hut, Earth home, Tiny Homes, Boat (includes Houseboat), Island, Farm stay |
 | Airbnb tags | Beachfront, Tower, A-frame, OMG!, Design |
 
-**Describe** accepts a free-text stay request. **Handpicked** shows a small curated set of unusual listings. Search and Show more on those tabs collect email interest through the same `/api/filter-request` path as “Missing a feature?” — owner mail is titled `Feature waitlist: <feature>` so you can tell which one they asked for. If a Describe visitor closes the dialog (or the tab) without leaving an email, you still get one `Describe search (no email): "<query>"` message — never both.
+**Describe** accepts a free-text stay request and opens the matching Airbnb search. If that search cannot be built, the waitlist dialog collects email interest through `/api/filter-request`. Owner mail is titled `Feature waitlist: <feature>`. If a visitor closes the dialog (or the tab) without leaving an email, you still get one `Describe search (no email): "<query>"` message — never both.
 
 Last search inputs are still remembered in `localStorage` and prefilled on the next Categories run. The previous-searches list is gone.
 
@@ -56,14 +56,12 @@ Autocapture is off. Pageviews are on. Custom events for the homepage:
 
 | Event | When |
 | ----- | ---- |
-| `find_mode_changed` | Categories / Describe / Handpicked tab switch (`from`, `to`) |
+| `find_mode_changed` | Categories / Describe tab switch (`from`, `to`) |
 | `category_toggled` | A category tile is selected or cleared |
 | `category_continue` | Continue from the category grid |
 | `airbnb_search_opened` | Categories search opens Airbnb |
-| `describe_search_submitted` | Describe Search (opens the waitlist dialog) |
-| `handpicked_listing_opened` | A handpicked card is opened |
-| `handpicked_show_more_clicked` | Show more on Handpicked |
-| `missing_feature_clicked` | “Missing a feature?” (`source`, `find_mode`) |
+| `describe_search_submitted` | Describe Search |
+| `describe_search_opened` | Describe opens the Airbnb results |
 | `feature_waitlist_shown` / `_dismissed` / `_failed` | Waitlist dialog lifecycle |
 | `feature_waitlist` | Client-side waitlist signup |
 | `filter_requested` / `filter_request_failed` | Missing-feature / filter dialog submit (the dialog closes immediately; the save runs in the background) |
@@ -95,7 +93,6 @@ Autocapture is off. Pageviews are on. Custom events for the homepage:
 ```
 ├── client/public/listings.json   # Listing data served to the browser
 ├── client/src/components/FindModes.tsx
-├── client/src/lib/handpicked.ts  # Curated Handpicked stays
 ├── client/src/lib/vibes.ts       # Category tiles + Airbnb filter IDs
 ├── data/listings-export.csv      # Source of truth for /v1 listings
 ├── scripts/csv-to-json.mjs       # CSV → JSON converter

@@ -3,6 +3,7 @@ import express from "express";
 import { createServer } from "http";
 import net from "net";
 import { handleContactRequest } from "../contact/http";
+import { handleDescribeRequest } from "../describe/describe";
 import { handleFilterRequestRequest } from "../filterRequest/http";
 import { handleSurveyRequest } from "../survey/http";
 import { handlePaywallRequest } from "../paywall/http";
@@ -71,6 +72,18 @@ async function startServer() {
   app.post("/api/paywall", async (req, res) => {
     const response = await handlePaywallRequest(
       new Request(`${req.protocol}://${req.get("host")}/api/paywall`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(req.body),
+      }),
+    );
+    const data = await response.json();
+    res.status(response.status).json(data);
+  });
+
+  app.post("/api/describe", async (req, res) => {
+    const response = await handleDescribeRequest(
+      new Request(`${req.protocol}://${req.get("host")}/api/describe`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(req.body),

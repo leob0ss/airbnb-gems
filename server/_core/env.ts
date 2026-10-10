@@ -8,4 +8,5 @@ export const ENV = {
     process.env.VITE_POSTHOG_PROJECT_TOKEN ||
     "",
   posthogHost: process.env.POSTHOG_HOST || "https://us.i.posthog.com",
+  anthropicApiKey: process.env.ANTHROPIC_API_KEY ?? "",
 };
